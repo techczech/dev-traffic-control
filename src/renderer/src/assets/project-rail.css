@@ -1,0 +1,252 @@
+/* ===========================================================================
+   The project rail (ADR-0016 § 2) — the wide presentation of the project list.
+   Transcribed from docs/design/2026-09-11-project-area-and-deep-links/
+   hifi-project-area.html states 1, 2, 7 and 8, in the app's own tokens.
+
+   The mockup's root class is `rail`; main.css already owns a bare `.rail` (the
+   Runner's 46px spine strip), so the root here is `project-rail` and every class
+   the mockup draws lives inside it. A bare word is a global claim.
+   =========================================================================== */
+
+/* 252px is the drawn width and the number RAIL_WIDTH in lib/railVisibility.ts
+   keeps in step. The rail does not shrink: whether this presentation is used at
+   all is decided in the renderer from the window's MEASURED width, because a
+   rail that shrank would still take its width from the surface beside it.
+   Below the threshold the list has no surface beside it and fills the window
+   instead — the `frontpage` modifier below. */
+.project-rail {
+  flex: 0 0 252px;
+  max-width: 252px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--paper-2);
+  border-right: 1px solid var(--line);
+}
+
+/* The narrow presentation (ADR-0016 § 2, mockup state 3): the same list, the
+   same rows, the same order — filling the window instead of sitting beside a
+   surface, because below the threshold there is no surface beside it. The
+   drawing composed this at 560px; the app's narrow preset is 460, so the width
+   is taken from the window and never from the drawing. */
+.project-rail.frontpage {
+  flex: 1 1 auto;
+  max-width: none;
+  border-right: 0;
+}
+
+/* The filter stays pinned against the top, the sync line against the bottom,
+   and only the list between them moves. */
+.project-rail .railtop {
+  flex: none;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.project-rail .search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 27px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+.project-rail .search:focus-within {
+  border-color: var(--accent);
+}
+.project-rail .search .ic {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--faint);
+}
+.project-rail .search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+.project-rail .search input::placeholder {
+  color: var(--faint);
+}
+.project-rail .railscroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 7px 0 9px;
+}
+.project-rail .rgrp {
+  padding: 11px 12px 5px;
+  font-size: 10px;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+.project-rail .rsection:first-of-type .rgrp {
+  padding-top: 4px;
+}
+
+/* All projects is pinned above the groups as a scope of its own. */
+.project-rail .allrow {
+  display: flex;
+  width: calc(100% - 12px);
+  align-items: center;
+  gap: 9px;
+  margin: 0 6px 3px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 620;
+  text-align: left;
+}
+.project-rail .allrow .ic {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--muted);
+}
+.project-rail .allrow .nm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-rail .allrow .ct {
+  margin-left: auto;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 11.5px;
+}
+.project-rail .allrow:hover {
+  background: var(--card);
+}
+.project-rail .allrow.on {
+  background: var(--card);
+  border-color: var(--line);
+  box-shadow: inset 2px 0 0 var(--muted);
+}
+
+/* A row carries what its project owes, never a bare name. */
+.project-rail .prow {
+  display: grid;
+  width: calc(100% - 12px);
+  grid-template-columns: 8px minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  margin: 0 6px;
+  padding: 7px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+}
+.project-rail .prow .dot {
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+.project-rail .prow.needs .dot {
+  background: var(--amber);
+}
+.project-rail .prow.flight .dot {
+  background: var(--accent);
+}
+.project-rail .prow:hover {
+  background: var(--card);
+}
+/* The rail marks the project in scope; the titlebar names it. */
+.project-rail .prow.on {
+  background: var(--card);
+  border-color: rgba(15, 118, 110, 0.32);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.project-rail .pbody {
+  display: block;
+  min-width: 0;
+}
+.project-rail .prow .nm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 620;
+}
+.project-rail .prow .nm span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The folder mark on the row in scope: clicking that row returns to the
+   project's home (mockup state 13). Shown when the row is pointed at or
+   focused, so the drawings of the home itself (states 9–12) stay as drawn. */
+.project-rail .prow .homemark {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  color: var(--accent);
+  opacity: 0;
+}
+.project-rail .prow:hover .homemark,
+.project-rail .prow:focus-visible .homemark {
+  opacity: 1;
+}
+.project-rail .prow .sub {
+  display: block;
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-rail .prow .owes {
+  color: var(--status-progress-ink);
+  font-weight: 600;
+}
+.project-rail .railempty {
+  padding: 12px;
+  color: var(--faint);
+  font-size: 12px;
+}
+.project-rail .railfoot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.project-rail .railfoot .ic {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.project-rail .railfoot .rcount {
+  margin-left: auto;
+}
+.project-rail button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* A matching record in the list's search results (2026-09-27): no status dot. */
+.project-rail .prow.hit .dot {
+  visibility: hidden;
+}

@@ -1,0 +1,522 @@
+/* Command surfaces: locked to the 2026-07-28 command-surfaces mockup. */
+.cmdk {
+  display: flex;
+  flex-direction: column;
+  width: 470px;
+  max-height: calc(100vh - 150px);
+}
+
+.cklist {
+  flex: 1;
+  min-height: 0;
+}
+
+.cksec {
+  padding: 9px 10px 4px;
+  color: var(--faint);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ckrow .keys {
+  display: flex;
+  flex: none;
+  gap: 4px;
+}
+
+.ckrow .unbound {
+  flex: none;
+  color: var(--faint);
+  font-size: 10px;
+  font-style: italic;
+}
+
+.ckrow.unavailable:not(.capturing) .cklabel {
+  color: var(--muted);
+}
+
+.ckfoot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 15px;
+  border-top: 1px solid var(--line);
+  background: var(--paper-2);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.ckfoot span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cksel {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--accent-tint);
+}
+
+.cksel .lab {
+  flex: none;
+  color: var(--accent);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cksel .what {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cksel .kindb {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(31, 35, 40, 0.07);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Inspector: the shared right-hand slot behind the active run or thread. */
+.insp {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: min(340px, 42vw);
+  min-height: 0;
+  border-left: 1px solid var(--line-2);
+  background: var(--card);
+}
+.insphead {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.insphead .t {
+  flex: 1;
+  color: var(--faint);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.insptabs {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  padding: 8px 10px 0;
+}
+.insptabs button {
+  padding: 6px 10px;
+  border-bottom: 2px solid transparent;
+  border-radius: 7px 7px 0 0;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.insptabs button.on {
+  border-bottom-color: var(--accent);
+  background: var(--accent-tint);
+  color: var(--accent);
+}
+.inspthreadtitle {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10.5px;
+}
+.inspbody {
+  flex: 1;
+  min-height: 0;
+  padding: 11px 12px;
+  overflow: auto;
+}
+.inspbody pre {
+  color: #3c4148;
+  font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+  font-size: 10.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.inspbody .fpath {
+  margin-bottom: 9px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  color: var(--faint);
+  font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+  font-size: 9.5px;
+  word-break: break-all;
+}
+.inspfile + .inspfile {
+  margin-top: 20px;
+}
+
+/* Find is a bar in the surface. Highlights use the visual CSS Highlight API,
+   leaving Reading's quote-anchored DOM nodes untouched. */
+.findbar {
+  z-index: 5;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line-2);
+  background: var(--card);
+  box-shadow: 0 3px 10px rgba(31, 35, 40, 0.07);
+}
+.findbar > input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+.findbar .count {
+  flex: none;
+  color: var(--muted);
+  font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+  font-size: 11px;
+}
+.findbar .navb {
+  display: flex;
+  flex: none;
+  gap: 3px;
+}
+::highlight(dtc-find) {
+  background: rgba(201, 148, 65, 0.34);
+}
+::highlight(dtc-find-current) {
+  background: var(--amber);
+  color: white;
+}
+
+/* Search results follow the locked palette-shaped overlay. */
+.srow {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  color: var(--ink);
+  text-align: left;
+}
+.srow:hover {
+  background: rgba(31, 35, 40, 0.045);
+}
+.srow.act {
+  background: var(--accent-tint);
+}
+.srow .l1 {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+.srow .st {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.srow .sk {
+  flex: none;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(31, 35, 40, 0.07);
+  color: var(--muted);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.srow .sp {
+  flex: none;
+  color: var(--faint);
+  font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+  font-size: 9.5px;
+}
+.srow .sn {
+  color: var(--muted);
+  font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+mark.hit {
+  border-radius: 2px;
+  background: rgba(201, 148, 65, 0.34);
+  color: inherit;
+}
+.capped {
+  margin: 4px 10px 8px;
+  padding: 9px 11px;
+  border: 1px solid rgba(201, 148, 65, 0.34);
+  border-radius: 8px;
+  background: rgba(201, 148, 65, 0.11);
+  color: #7d5c1f;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.capped.pinned {
+  flex: none;
+  margin: 0;
+  border-width: 1px 0 0;
+  border-radius: 0;
+}
+.search-landed {
+  animation: search-landed 1.8s ease-out;
+}
+@keyframes search-landed {
+  0%,
+  35% {
+    background: rgba(201, 148, 65, 0.32);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+@media (max-width: 760px) {
+  .insp {
+    position: absolute;
+    z-index: 32;
+    inset: 42px 0 30px auto;
+    width: min(340px, calc(100vw - 36px));
+    box-shadow: -18px 0 45px rgba(31, 35, 40, 0.2);
+  }
+}
+
+.ckrow.capturing {
+  background: rgba(201, 148, 65, 0.16);
+  box-shadow: inset 0 0 0 1.5px var(--amber);
+}
+
+.ckrow .capnote {
+  flex: none;
+  color: #8a6524;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.conflict {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 10px 2px;
+  padding: 9px 11px;
+  border: 1px solid rgba(194, 91, 78, 0.32);
+  border-radius: 8px;
+  background: rgba(194, 91, 78, 0.09);
+  color: #8f3d33;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.conflict .retry {
+  flex: none;
+}
+
+.sheetwide {
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - 64px);
+  max-width: 760px;
+  max-height: calc(100% - 96px);
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--paper);
+  box-shadow: 0 30px 80px rgba(31, 35, 40, 0.35);
+}
+
+.sheetwide .shead {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px 13px;
+  border-bottom: 1px solid var(--line);
+}
+
+.sheetwide .shead h2 {
+  flex: none;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.sheetwide .sfilter {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 5px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: white;
+}
+
+.sheetwide .sfilter input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 12.5px;
+}
+
+.sheetbody {
+  flex: 1;
+  padding: 6px 20px 20px;
+  overflow: auto;
+  columns: 2;
+  column-gap: 30px;
+}
+
+.sheetbody .grp {
+  margin-top: 14px;
+  break-inside: avoid;
+}
+
+.sheetbody h3 {
+  margin: 0 0 5px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+  color: var(--faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.sheetbody .krow {
+  align-items: baseline;
+  padding: 3.5px 0;
+  font-size: 12.5px;
+}
+
+.sheetbody .krow .keys {
+  width: 92px;
+  justify-content: flex-end;
+}
+
+.sheetbody .kl {
+  min-width: 0;
+}
+
+.sheetbody .kl.unb {
+  color: var(--muted);
+}
+
+.keymap-settings {
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.keymap-settings-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.keymap-settings-head > div {
+  flex: 1;
+}
+
+.keymap-settings-head h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.keymap-settings-head p {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.keymap-settings-list {
+  max-height: 320px;
+  overflow: auto;
+}
+
+.keymap-settings-row {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) 80px auto 110px;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11.5px;
+}
+
+.keymap-settings-row:last-child {
+  border-bottom: 0;
+}
+
+.keymap-settings-section,
+.keymap-settings-binding {
+  color: var(--muted);
+}
+
+.keymap-settings-binding {
+  font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+  text-align: right;
+}
+
+.keymap-settings-changed {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--accent-tint);
+  color: var(--accent);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+@media (max-width: 620px) {
+  .sheetbody {
+    columns: 1;
+  }
+
+  .keymap-settings-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .keymap-settings-section,
+  .keymap-settings-changed {
+    display: none;
+  }
+}

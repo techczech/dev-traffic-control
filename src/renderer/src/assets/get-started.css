@@ -1,0 +1,406 @@
+/* Ticket 34: the Get started page and the example project strip.
+   Drawings: docs/design/2026-09-30-first-run/shots/empty-b-get-started-*.png and
+   example-project-dash-wide.png. Values follow build_frames.py. */
+
+.gs-page .gs-col {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 26px 32px 24px;
+  gap: 18px;
+}
+.gs-card {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(31, 35, 40, 0.05);
+  padding: 22px 26px 10px;
+}
+.gs-card > h2 {
+  font-size: 20px;
+  font-weight: 650;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gs-card > h2 svg {
+  color: var(--accent);
+}
+.gs-card > p.sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 4px 0 10px;
+}
+.gs-step {
+  display: flex;
+  gap: 16px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+.gs-n {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.gs-b {
+  min-width: 0;
+  flex: 1;
+}
+.gs-b h3 {
+  font-size: 16px;
+  font-weight: 650;
+}
+.gs-b p {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.gs-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+.gs-link:hover {
+  text-decoration: underline;
+}
+.gs-link svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+.gs-code {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 8px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 8px 8px 10px;
+}
+.gs-code code {
+  flex: 1;
+  min-width: 0;
+  font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.gs-copy {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--accent);
+  background: #fff;
+  border: 1px solid var(--line-2);
+  border-radius: 7px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.gs-copy:hover {
+  background: var(--accent-tint);
+}
+.gs-copy.done {
+  border-color: var(--accent);
+}
+.gs-copy svg {
+  width: 13px;
+  height: 13px;
+}
+.gs-act {
+  margin-top: 9px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.gs-act .primbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  padding: 8px 18px;
+}
+.gs-send {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gs-send > h2 {
+  font-size: 15px;
+  font-weight: 650;
+}
+.gs-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.gs-tile {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gs-tile h3 {
+  font-size: 14px;
+  font-weight: 650;
+}
+.gs-tile p {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.gs-pic {
+  height: 76px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  overflow: hidden;
+}
+.gs-pic.row2 {
+  flex-direction: row;
+  align-items: stretch;
+  gap: 6px;
+}
+.gs-pic .ln {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.gs-pic .ln i {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  background: var(--hollow);
+}
+.gs-pic .ln i.v-pass {
+  background: var(--pass);
+}
+.gs-pic .ln i.v-fail {
+  background: var(--fail);
+}
+.gs-pic .ln b {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--line-2);
+  flex: 1;
+}
+.gs-pic .ln b.s {
+  flex: none;
+  width: 55%;
+}
+.gs-pic .sh {
+  flex: 1;
+  background: #fff;
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px;
+}
+.gs-pic .sh i {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line-2);
+}
+.gs-pic .sh i.a {
+  background: var(--accent);
+  width: 55%;
+}
+.gs-pic .sh i.a.wide {
+  width: 80%;
+}
+.gs-pic .dmd {
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  border: 1.8px solid var(--amber);
+  border-radius: 2px;
+  align-self: center;
+  flex: none;
+}
+.gs-pic .hand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gs-pic .hand .card {
+  flex: 1;
+  background: #fff;
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  height: 38px;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.gs-pic .hand .card i {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line-2);
+}
+.gs-pic .hand svg {
+  width: 14px;
+  height: 14px;
+  color: var(--accent);
+  flex: none;
+}
+
+/* The 460 sidebar (drawing empty-b-get-started-narrow). */
+@media (max-width: 600px) {
+  .gs-page .gs-col {
+    padding: 18px 16px 20px;
+  }
+  .gs-card {
+    padding: 16px 14px 6px;
+  }
+  .gs-step {
+    gap: 12px;
+    padding: 14px 0;
+  }
+  .gs-n {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+  .gs-code {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .gs-code code {
+    font-size: 12px;
+  }
+  .gs-copy {
+    align-self: flex-start;
+  }
+  .gs-tiles {
+    grid-template-columns: 1fr;
+  }
+  .gs-tile {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+  }
+  .gs-tile .gs-pic {
+    flex: none;
+    width: 104px;
+  }
+}
+
+/* The example project strip on its Project Dash (drawing example-project-dash-wide). */
+.exbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--accent-tint);
+  border: 1px solid rgba(15, 118, 110, 0.25);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.exbar b {
+  font-weight: 650;
+}
+.exbar .grow {
+  flex: 1;
+  min-width: 0;
+}
+.exbar .exbar-acts {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.exbar.confirm {
+  background: var(--card);
+  border-color: var(--line-2);
+}
+.exbar .danger {
+  color: #fff;
+  background: var(--fail);
+  border-radius: 7px;
+  padding: 4px 10px;
+  font-weight: 650;
+}
+
+/* Onboarding's second sentence (drawing first-a-onboarding). */
+.empty.onboard .onboard-more {
+  margin: 12px 0 0;
+  max-width: 380px;
+  line-height: 1.5;
+}
+
+/* The Dash's Get started button (ticket 34), styled like the Project Dash's New note. */
+.fleet .fleet-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+.fleet .fleet-get-started {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--line-2);
+  background: var(--card);
+  border-radius: 8px;
+  padding: 5px 11px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+.fleet .fleet-get-started:hover {
+  background: var(--accent-tint);
+}
+.fleet .fleet-get-started svg {
+  width: 14px;
+  height: 14px;
+  color: var(--accent);
+}
+.phome .exbar {
+  margin-bottom: 12px;
+}
+.exbar .ghostbtn {
+  color: var(--accent);
+  font-weight: 600;
+}

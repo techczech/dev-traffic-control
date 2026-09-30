@@ -1,0 +1,184 @@
+/* ===========================================================================
+   Deep-link arrival — mockup states 19–22 (ADR-0016 § 5).
+
+   Two roots, both namespaced: `.link-arrival` is the banner above the surface,
+   `.link-arrival-panel` the state that replaces it. Nothing here claims a bare
+   word. `main.css` already owns `.banner` and `.empty`, and a bare class is a
+   global claim: that is how 0.20.0 shipped a rail squeezed to 46px, and how the
+   project rail's own stylesheet came to be namespaced to its root.
+
+   Amber and red are not decoration. Amber clock with a pull button means the
+   record is coming; red shield with no project, no path and only a way out
+   means a link was turned away. Nothing may be styled so the two can be
+   mistaken for each other.
+   =========================================================================== */
+
+.link-arrival {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 10px 14px 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line-2);
+  background: var(--card);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.link-arrival .ic {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+.link-arrival .grow {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+}
+
+.link-arrival .grow b {
+  font-weight: 660;
+}
+
+.link-arrival.info {
+  border-color: rgba(15, 118, 110, 0.34);
+  background: var(--accent-tint);
+}
+
+.link-arrival.info > .ic {
+  color: var(--accent);
+}
+
+.link-arrival.warn {
+  border-color: rgba(201, 148, 65, 0.45);
+  background: rgba(201, 148, 65, 0.12);
+}
+
+.link-arrival.warn > .ic {
+  color: var(--amber);
+}
+
+.link-arrival.stop {
+  border-color: rgba(194, 91, 78, 0.45);
+  background: rgba(194, 91, 78, 0.1);
+}
+
+.link-arrival.stop > .ic {
+  color: var(--fail);
+}
+
+/* The link itself, shown only for a link that was accepted. A refusal never
+   prints a path: the window must not become a way to display what a hostile
+   link was aiming at. */
+.link-arrival .url {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 46%;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.link-arrival .dismiss {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+}
+
+.link-arrival .dismiss:hover {
+  background: var(--hollow);
+  color: var(--ink);
+}
+
+/* ---------- the states that replace the surface ---------- */
+
+.link-arrival-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 36px 28px;
+  text-align: center;
+}
+
+.link-arrival-panel .medallion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 8px;
+  border-radius: 50%;
+  border: 1px solid;
+}
+
+.link-arrival-panel .medallion .ic {
+  width: 21px;
+  height: 21px;
+}
+
+.link-arrival-panel.warn .medallion {
+  border-color: rgba(201, 148, 65, 0.5);
+  background: rgba(201, 148, 65, 0.14);
+  color: var(--amber);
+}
+
+.link-arrival-panel.stop .medallion {
+  border-color: rgba(194, 91, 78, 0.5);
+  background: rgba(194, 91, 78, 0.12);
+  color: var(--fail);
+}
+
+.link-arrival-panel h2 {
+  font-size: 17px;
+  font-weight: 640;
+  letter-spacing: -0.01em;
+}
+
+.link-arrival-panel.stop h2 {
+  color: var(--fail);
+}
+
+.link-arrival-panel p {
+  max-width: 44ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.link-arrival-panel p.aside {
+  color: var(--faint);
+  font-size: 12.5px;
+}
+
+.link-arrival-panel .acts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 14px;
+}
