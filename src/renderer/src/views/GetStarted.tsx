@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowRightLeft, Check, CirclePlay, Copy, ExternalLink, Plug } from 'lucide-react'
 import { useApp } from '../state/app'
+import { refreshExample } from '../lib/exampleState'
 import {
   EXAMPLE_SLUG,
   INSTALL_LINE,
@@ -54,7 +55,7 @@ function CopyLine({ text, label }: { text: string; label: string }): React.JSX.E
  * the DTC Dash, Help, the empty Inbox and the command palette.
  */
 export function GetStarted(): React.JSX.Element {
-  const { snapshot, settings, openProject, showToast } = useApp()
+  const { snapshot, settings, openProject, showToast, changeSetting } = useApp()
   const [opening, setOpening] = useState(false)
   const recordsFolder = snapshot?.root ?? settings?.qaRepoPath ?? '~/Documents/Dev Traffic Control'
 
@@ -66,6 +67,7 @@ export function GetStarted(): React.JSX.Element {
         if (result.kind === 'refused') showToast(exampleRefusalMessage(result.reason))
         else openProject(result.slug)
       })
+      .then(() => refreshExample())
       .catch(() => showToast(exampleRefusalMessage('write-failed')))
       .finally(() => setOpening(false))
   }
@@ -76,6 +78,19 @@ export function GetStarted(): React.JSX.Element {
         <Plug className="ic l" strokeWidth={2} />
         <span className="vt">Get started</span>
         <span className="grow" />
+        {settings && !settings.getStartedRetired && (
+          <button
+            type="button"
+            className="ghostbtn"
+            title="Hide the Get started button in the title bar. It stays in Settings."
+            onClick={() => {
+              changeSetting('getStartedRetired', true)
+              showToast('Get started button hidden. It stays in Settings.')
+            }}
+          >
+            Hide
+          </button>
+        )}
       </div>
       <div className="gs-col">
         <section className="gs-card" aria-label="Connect your agents">

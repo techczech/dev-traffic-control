@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Plug, Search, X } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { COMMANDS, commandsBySection } from '../commands/registry'
 import { displayChord, effectiveBindings } from '../commands/keymap'
 import { useCommandScope } from '../commands/provider'
@@ -29,7 +29,7 @@ const FINE_PRINT: Partial<Record<(typeof COMMANDS)[number]['section'], React.Rea
 
 /** The registry-rendered wide keyboard sheet. Mod+/ remains reachable in text fields. */
 export function CheatSheet(): React.JSX.Element | null {
-  const { helpOpen, setHelpOpen, settings, navigate } = useApp()
+  const { helpOpen, setHelpOpen, settings } = useApp()
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const returnFocusRef = useRef<HTMLElement | null>(null)
@@ -93,18 +93,6 @@ export function CheatSheet(): React.JSX.Element | null {
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
-          {/* Help's way to the first-run steps (ticket 34). */}
-          <button
-            type="button"
-            className="ghostbtn"
-            onClick={() => {
-              setHelpOpen(false)
-              navigate({ kind: 'get-started' })
-            }}
-          >
-            <Plug className="ic" strokeWidth={2} />
-            Get started
-          </button>
           <button className="iconbtn" aria-label="Close" onClick={close}>
             <X className="ic" strokeWidth={2} />
           </button>

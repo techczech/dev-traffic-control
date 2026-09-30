@@ -166,6 +166,9 @@ export interface Settings {
   // Command registry overrides only. Missing ids inherit the current release's
   // defaults; an empty string intentionally leaves a command unbound.
   keymap: Record<string, string>
+  // Ticket 36: the title-bar Get started / Remove example button is retired once
+  // the example is removed or Get started is hidden. Settings can bring it back.
+  getStartedRetired: boolean
 }
 
 export type VerdictLayout = 'one' | 'all'

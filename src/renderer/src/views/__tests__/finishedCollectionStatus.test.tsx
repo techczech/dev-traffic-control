@@ -63,7 +63,8 @@ const settings: Settings = {
   windowMode: 'free',
   verdictLayout: 'one',
   reviewMargin: 'auto',
-  keymap: {}
+  keymap: {},
+  getStartedRetired: false
 }
 
 function snapshot(options: { watching?: boolean; collected?: boolean } = {}): QaSnapshot {

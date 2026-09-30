@@ -13,6 +13,7 @@ import { useApp } from '../state/app'
 import { displayChord } from '../commands/keymap'
 import { useCommands } from '../commands/provider'
 import { ScopeIndicator } from './ScopeIndicator'
+import { GetStartedButton } from './GetStartedButton'
 import { DockButton } from './DockButton'
 import { DTC_DASH, isOnDtcDash } from '../lib/dashLabel'
 import { useProjectListPresentation } from '../lib/railVisibility'
@@ -107,6 +108,8 @@ export function Chrome({
           the controls keep their place whatever the project is called. It is
           also the part of the bar left free to drag the window by. */}
       <span className="tbspace" aria-hidden="true" />
+      {/* Ticket 36: Get started, then Remove example, then gone. */}
+      <GetStartedButton />
       <button
         className="iconbtn"
         aria-label="Switch project, run or note"

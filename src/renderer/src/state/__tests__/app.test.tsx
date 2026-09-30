@@ -43,7 +43,8 @@ const SETTINGS: Settings = {
   windowMode: 'free',
   verdictLayout: 'one',
   reviewMargin: 'auto',
-  keymap: {}
+  keymap: {},
+  getStartedRetired: false
 }
 
 let windowScope: WindowScopeState = { lastSurfaceByProject: {} }

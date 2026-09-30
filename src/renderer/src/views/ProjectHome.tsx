@@ -19,7 +19,6 @@ import type { PoolTier } from '../../../main/qa/pool'
 import { useApp } from '../state/app'
 import { VerdictSheet } from '../components/VerdictSheet'
 import { ArchiveOld } from '../components/ArchiveOld'
-import { ExampleStrip } from '../components/ExampleStrip'
 import { InlineText } from '../components/InlineText'
 import { inlinePlain } from '../lib/inlineEmphasis'
 import type { ReleaseVerdict } from '../../../main/qa/releaseRecords'
@@ -146,7 +145,13 @@ export function ProjectHome({ slug }: { slug: string }): React.JSX.Element {
     'nav.new-note': { enabled: !!model, handler: writeNote }
   })
 
-  if (!model) return <div className="view phome" />
+  if (!model) {
+    return (
+      <div className="view phome">
+        <div className="phome-scroll" />
+      </div>
+    )
+  }
 
   if (model.empty) {
     return (
@@ -344,7 +349,6 @@ export function ProjectHome({ slug }: { slug: string }): React.JSX.Element {
         />
       )}
       <div className="phome-scroll">
-        <ExampleStrip slug={slug} />
         <div className="phome-toolbar">
           <NewNoteButton onClick={writeNote} />
           {model.standing.owed.total > 0 && <ArchiveOld scope={{ kind: 'project', slug }} />}

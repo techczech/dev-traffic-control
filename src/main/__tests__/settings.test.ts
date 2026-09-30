@@ -45,6 +45,20 @@ afterEach(async () => {
 })
 
 describe('SettingsStore', () => {
+  test('getStartedRetired defaults to false, loads from an old file without it, and persists', async () => {
+    expect(defaultSettings().getStartedRetired).toBe(false)
+    const file = await tmp()
+    const { keymap: _keymap, ...old } = defaultSettings()
+    await writeFile(file, JSON.stringify({ settings: old, changelog: [] }))
+    const store = new SettingsStore(file, defaultSettings(), fixedNow)
+    expect(store.get().getStartedRetired).toBe(false)
+    await store.setTransactional('getStartedRetired', true)
+    const reopened = new SettingsStore(file, defaultSettings(), fixedNow)
+    expect(reopened.get().getStartedRetired).toBe(true)
+    await writeFile(file, JSON.stringify({ settings: { getStartedRetired: 'yes' }, changelog: [] }))
+    expect(new SettingsStore(file, defaultSettings(), fixedNow).get().getStartedRetired).toBe(false)
+  })
+
   test('a transactional set matching a queued projection waits for durable storage', async () => {
     const file = await tmp()
     const store = new SettingsStore(file, defaultSettings(), fixedNow)

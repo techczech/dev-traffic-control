@@ -22,7 +22,8 @@ const KEY_NAME: Record<keyof SettingsType, string> = {
   windowMode: 'Window placement',
   verdictLayout: 'Verdict sheet layout',
   reviewMargin: 'Review margin',
-  keymap: 'Keyboard shortcuts'
+  keymap: 'Keyboard shortcuts',
+  getStartedRetired: 'Get started button hidden'
 }
 
 function keyName(key: string): string {
@@ -38,6 +39,7 @@ function displayVal(key: string, value: unknown): string {
   switch (key) {
     case 'dockBadge':
     case 'pinned':
+    case 'getStartedRetired':
       return value ? 'On' : 'Off'
     case 'appearance':
       return { light: 'Light', dark: 'Dark', system: 'System' }[String(value)] ?? String(value)
@@ -128,7 +130,8 @@ export function Settings(): React.JSX.Element {
     setWindowMode,
     back,
     openCommandPalette,
-    reloadSettings
+    reloadSettings,
+    navigate
   } = useApp()
   const [query, setQuery] = useState('')
   const [pathError, setPathError] = useState<string | null>(null)
@@ -242,6 +245,7 @@ export function Settings(): React.JSX.Element {
     badge: matches('dock badge waiting count on off', q),
     width: matches('window width narrow wide reading strip', q),
     placement: matches('window placement free docked right dock edge screen', q),
+    getStarted: matches('get started connect agents example project button show again hide', q),
     version: matches(`version running build ${version}`, q),
     keymap:
       matches('keyboard shortcuts keymap command palette bindings', q) || keymapRows.length > 0
@@ -253,6 +257,7 @@ export function Settings(): React.JSX.Element {
     rowVisible.badge ||
     rowVisible.width ||
     rowVisible.placement ||
+    rowVisible.getStarted ||
     rowVisible.version ||
     rowVisible.keymap
 
@@ -419,6 +424,29 @@ export function Settings(): React.JSX.Element {
                   Docked
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {rowVisible.getStarted && (
+          <div className="setrow">
+            <div className="sname">Get started</div>
+            <div className="sdesc">
+              Connect your agents, or look around the example project. The title-bar button
+              {settings.getStartedRetired ? ' is hidden' : ' shows until the example is removed'}.
+            </div>
+            <div className="sctl">
+              <button className="outbtn sm" onClick={() => navigate({ kind: 'get-started' })}>
+                Get started
+              </button>
+              {settings.getStartedRetired && (
+                <button
+                  className="outbtn sm"
+                  onClick={() => changeSetting('getStartedRetired', false)}
+                >
+                  Show the button again
+                </button>
+              )}
             </div>
           </div>
         )}

@@ -17,7 +17,8 @@ export function defaultSettings(): Settings {
     windowMode: 'free',
     verdictLayout: 'one',
     reviewMargin: 'auto',
-    keymap: {}
+    keymap: {},
+    getStartedRetired: false
   }
 }
 
@@ -46,7 +47,8 @@ const SETTING_NAMES: Record<keyof Settings, string> = {
   windowMode: 'Window placement',
   verdictLayout: 'Verdict sheet layout',
   reviewMargin: 'Review margin',
-  keymap: 'Keyboard shortcuts'
+  keymap: 'Keyboard shortcuts',
+  getStartedRetired: 'Get started button hidden'
 }
 
 /**
@@ -232,7 +234,7 @@ function normaliseSetting<K extends keyof Settings>(
   }
   if (choices[key]) return (choices[key]!.includes(value) ? value : fallback) as Settings[K]
   if (key === 'qaRepoPath') return (typeof value === 'string' ? value : fallback) as Settings[K]
-  if (key === 'pinned' || key === 'dockBadge') {
+  if (key === 'pinned' || key === 'dockBadge' || key === 'getStartedRetired') {
     return (typeof value === 'boolean' ? value : fallback) as Settings[K]
   }
   if (key === 'keymap') {

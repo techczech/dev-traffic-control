@@ -15,7 +15,8 @@ const app = vi.hoisted(() => ({
     windowMode: 'free',
     verdictLayout: 'one',
     reviewMargin: 'auto',
-    keymap: { 'window.toggle-pin': 'Alt+P' }
+    keymap: { 'window.toggle-pin': 'Alt+P' },
+    getStartedRetired: false
   } as SettingsType,
   changeSetting: vi.fn(),
   setPinned: vi.fn(),
@@ -23,7 +24,8 @@ const app = vi.hoisted(() => ({
   setWindowMode: vi.fn(),
   back: vi.fn(),
   openCommandPalette: vi.fn(),
-  reloadSettings: vi.fn()
+  reloadSettings: vi.fn(),
+  navigate: vi.fn()
 }))
 
 vi.mock('../../state/app', () => ({
@@ -167,4 +169,18 @@ test('a refused record-folder change says so and never reloads as if it worked',
     expect(screen.getByRole('alert').textContent).toMatch(/could not use that folder/i)
   )
   expect(app.reloadSettings).not.toHaveBeenCalled()
+})
+
+test('Settings carries Get started, and offers the button back only once it is retired', () => {
+  render(<Settings />)
+  fireEvent.click(screen.getAllByRole('button', { name: 'Get started' })[0])
+  expect(app.navigate).toHaveBeenCalledWith({ kind: 'get-started' })
+  expect(screen.queryByRole('button', { name: 'Show the button again' })).toBeNull()
+  cleanup()
+
+  app.settings = { ...app.settings, getStartedRetired: true }
+  render(<Settings />)
+  fireEvent.click(screen.getByRole('button', { name: 'Show the button again' }))
+  expect(app.changeSetting).toHaveBeenCalledWith('getStartedRetired', false)
+  app.settings = { ...app.settings, getStartedRetired: false }
 })

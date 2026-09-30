@@ -280,6 +280,14 @@ test('an empty project is one sentence and the one thing that would change it', 
   expect(app.navigate).toHaveBeenCalledWith({ kind: 'note', newIn: '/record/tallyboard' })
 })
 
+test('the example project’s Dash carries no strip: Remove example lives in the title bar (ticket 36)', () => {
+  app.snapshot = { ...snapshot({}), projects: ['example-app'] }
+  render(<ProjectHome slug="example-app" />)
+  expect(screen.getByText('Nothing has been recorded here yet')).toBeTruthy()
+  expect(screen.queryByText('Remove example')).toBeNull()
+  expect(screen.queryByText('This is the example project.')).toBeNull()
+})
+
 test('a long list draws its newest rows and a quiet line counting the rest', () => {
   app.snapshot = snapshot({
     runs: Array.from({ length: 15 }, (_, i) => run(`Request ${i}`, `2026-09-${10 + i}T09:00:00Z`))

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowRightLeft, ChevronDown, Clock, List, Plug } from 'lucide-react'
+import { ArrowRightLeft, ChevronDown, Clock, List } from 'lucide-react'
 import { useApp } from '../state/app'
 import { ArchiveOld } from '../components/ArchiveOld'
 import { useCommandScope } from '../commands/provider'
@@ -115,17 +115,6 @@ export function FleetOverview(): React.JSX.Element {
   return (
     <div className="view fleet">
       <div className="fleet-scroll">
-        {/* Ticket 34: how to connect agents, always one click from the Dash. */}
-        <div className="fleet-toolbar">
-          <button
-            type="button"
-            className="fleet-get-started"
-            onClick={() => navigate({ kind: 'get-started' })}
-          >
-            <Plug className="ic" strokeWidth={2} />
-            Get started
-          </button>
-        </div>
         <div className="fleet-tiles">
           <div className={`fleet-tile${tiles.waiting > 0 ? ' pull' : ''}`}>
             <div className="n">{tiles.waiting}</div>

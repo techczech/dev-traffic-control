@@ -103,3 +103,15 @@ test('a refused example says why and opens nothing', async () => {
   )
   expect(app.openProject).not.toHaveBeenCalled()
 })
+
+test('Hide retires the title-bar button and the page stops offering it', () => {
+  const changeSetting = vi.fn()
+  Object.assign(app, { settings: { getStartedRetired: false }, changeSetting })
+  const { rerender } = render(<GetStarted />)
+  fireEvent.click(screen.getByRole('button', { name: 'Hide' }))
+  expect(changeSetting).toHaveBeenCalledWith('getStartedRetired', true)
+  Object.assign(app, { settings: { getStartedRetired: true } })
+  rerender(<GetStarted />)
+  expect(screen.queryByRole('button', { name: 'Hide' })).toBeNull()
+  Object.assign(app, { settings: null })
+})
