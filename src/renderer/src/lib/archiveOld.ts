@@ -5,8 +5,8 @@ import { isHandoffReady, isRequestOwed, isThreadOwed, type Housekeeping } from '
 import { UNFILED } from './roadmap'
 
 /**
- * Ticket 22, archive old. Dominik: "I owe something in many projects but it's
- * out of date, so we need a way for me to say archive old." He picks the age
+ * Ticket 22, archive old. Many projects show owed items that are out of date, so the reviewer needs a
+ * way to say "archive old". The reviewer picks the age
  * each time, seeing how many items each age would clear.
  *
  * Candidates are exactly what the owed count counts, minus release features,

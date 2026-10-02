@@ -6,7 +6,7 @@ import path from 'node:path'
  * The record folder's sync state, for the one link state that is a sync
  * question rather than a safety one (mockup state 21).
  *
- * Nothing here runs because a link arrived. The pull happens only when Dominik
+ * Nothing here runs because a link arrived. The pull happens only when the reviewer
  * presses the button the sync-lag state offers — a link itself never writes,
  * never fetches and never starts a process (ADR-0016 § 5).
  */
@@ -28,7 +28,7 @@ export async function recordRepoLastPulledAt(root: string): Promise<string | und
 
 export interface RecordRepoPullResult {
   ok: boolean
-  /** Said in human words; shown to Dominik when the pull could not happen. */
+  /** Said in human words; shown to the reviewer when the pull could not happen. */
   message: string
 }
 
@@ -45,7 +45,7 @@ const runGit: RunGit = (args) =>
 /**
  * Fast-forward the record folder.
  *
- * `--ff-only` on purpose: this may run while Dominik has local record work in
+ * `--ff-only` on purpose: this may run while the reviewer has local record work in
  * flight, and a pull that merged, rebased or rewrote anything would be the app
  * touching records it does not own. A diverged folder is left exactly as it is
  * and says so.
@@ -57,7 +57,10 @@ export async function pullRecordRepo(
   try {
     await stat(path.join(root, '.git'))
   } catch {
-    return { ok: false, message: 'Your record folder is not a git repository, so there is nothing to pull.' }
+    return {
+      ok: false,
+      message: 'Your record folder is not a git repository, so there is nothing to pull.'
+    }
   }
   const result = await run(['-C', root, 'pull', '--ff-only'])
   return result.ok

@@ -1,8 +1,19 @@
+import { useMemo } from 'react'
+import { BellRing, CircleAlert } from 'lucide-react'
 import { useApp } from '../state/app'
+import { requestKey } from '../lib/inbox'
+import {
+  bodyParts,
+  parentChips,
+  recordIndex,
+  type ChipTarget,
+  type RecordIndex
+} from '../lib/recordChips'
 import { formatClock, reviewDispositionLabel, reviewOutcomeLabel } from '../lib/format'
 import { formatFullAge } from '../lib/dateVocabulary'
 import type { RunRowState } from '../lib/roadmap'
 import { MiniSpine } from '../components/MiniSpine'
+import { RecordChipButton } from '../components/RecordChipButton'
 import { FleetOverview } from './FleetOverview'
 import type { ItemStatus, Thread } from '../../../main/qa/types'
 import { overviewDestination } from '../lib/overviewDestination'
@@ -202,14 +213,25 @@ export function Dashboard(): React.JSX.Element {
 }
 
 export function ThreadView({ threadId }: { threadId: string }): React.JSX.Element {
-  const { snapshot } = useApp()
+  const { snapshot, navigate, markSeen, housekeeping } = useApp()
   const thread = snapshot?.threads.find((candidate) => candidate.id === threadId) ?? null
+  // Ages are read as of the latest scan.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const now = useMemo(() => new Date(), [snapshot])
+  const index = useMemo(
+    () => recordIndex(snapshot, thread?.projects ?? [], now, housekeeping),
+    [snapshot, thread, now, housekeeping]
+  )
+  const open = (target: ChipTarget): void => {
+    if (target.kind === 'runner') markSeen(requestKey(snapshot?.root ?? '', target.path))
+    navigate(target)
+  }
 
   return (
     <div className="view roadmap">
       <div className="reader">
         {thread ? (
-          <ThreadReader thread={thread} now={new Date()} />
+          <ThreadReader thread={thread} now={now} index={index} onOpen={open} />
         ) : (
           <div className="rowempty">This thread is not available in the current record.</div>
         )}
@@ -218,7 +240,44 @@ export function ThreadView({ threadId }: { threadId: string }): React.JSX.Elemen
   )
 }
 
-function ThreadReader({ thread, now }: { thread: Thread; now: Date }): React.JSX.Element {
+function EntryBody({
+  body,
+  index,
+  onOpen
+}: {
+  body: string
+  index: RecordIndex
+  onOpen: (target: ChipTarget) => void
+}): React.JSX.Element {
+  return (
+    <div className="etext">
+      {bodyParts(body, index).map((part, position) =>
+        part.kind === 'text' ? (
+          <span key={position}>{part.text}</span>
+        ) : (
+          <RecordChipButton key={position} chip={part.chip} onOpen={onOpen} />
+        )
+      )}
+    </div>
+  )
+}
+
+function ThreadReader({
+  thread,
+  now,
+  index,
+  onOpen
+}: {
+  thread: Thread
+  now: Date
+  index: RecordIndex
+  onOpen: (target: ChipTarget) => void
+}): React.JSX.Element {
+  const waitsOnYou = thread.state !== 'retired' && thread.move === 'me'
+  // The entry that asks him is the latest one whose move is his.
+  const asking = waitsOnYou
+    ? ([...thread.entries].reverse().find((entry) => entry.move === 'me')?.path ?? null)
+    : null
   return (
     <>
       <header className="rhead">
@@ -244,6 +303,15 @@ function ThreadReader({ thread, now }: { thread: Thread; now: Date }): React.JSX
         </div>
       </header>
       <div className="rbody" data-find-scope>
+        {waitsOnYou && (
+          <div className="waitbar" role="status">
+            <CircleAlert className="ic" strokeWidth={2} />
+            <span>
+              <b>This thread waits on you.</b> The question is in the latest entry that asks you;
+              any record it names opens from its chip.
+            </span>
+          </div>
+        )}
         {thread.entries.map((e) => {
           const first =
             e.body
@@ -251,26 +319,41 @@ function ThreadReader({ thread, now }: { thread: Thread; now: Date }): React.JSX
               .map((l) => l.trim())
               .find(Boolean) ?? ''
           const rest = e.body.trim()
+          const asks = e.path === asking
           return (
-            <article key={e.path} className="entry" data-source-file={e.path}>
+            <article
+              key={e.path}
+              className={`entry${asks ? ' asks' : ''}`}
+              data-source-file={e.path}
+            >
               <div className="ehead">
                 <span className={`who${e.by !== 'agent' ? ' dom' : ''}`}>
                   {e.by !== 'agent' ? 'You' : 'Agent'}
                 </span>
                 {e.dictation && <span className="dict">dictated</span>}
+                {asks && (
+                  <span className="asklbl">
+                    <BellRing className="ic" strokeWidth={2} />
+                    Asks you
+                  </span>
+                )}
                 <span className="grow" />
                 <span className="when">{formatFullAge(e.at, now)}</span>
               </div>
-              <div className="etext">{rest || first}</div>
+              <EntryBody body={rest || first} index={index} onOpen={onOpen} />
               {e.parents.length > 0 ? (
                 <div className="parents">
                   fed by{' '}
-                  {e.parents.map((p, i) => (
-                    <b key={p}>
-                      {p}
-                      {i < e.parents.length - 1 ? ', ' : ''}
-                    </b>
-                  ))}
+                  {parentChips(e.parents, index).map(({ name, chip }, i) =>
+                    chip ? (
+                      <RecordChipButton key={name} chip={chip} onOpen={onOpen} />
+                    ) : (
+                      <b key={name}>
+                        {name}
+                        {i < e.parents.length - 1 ? ', ' : ''}
+                      </b>
+                    )
+                  )}
                 </div>
               ) : e.dictation ? (
                 <div className="parents">dictated · quality may vary</div>

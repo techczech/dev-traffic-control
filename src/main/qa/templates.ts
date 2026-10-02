@@ -6,7 +6,7 @@
 // Bump on every content change to ROOT_AGENTS_MD — bootstrap refreshes the
 // live AGENTS.md in the records folder whenever the bundled template is newer than the file's
 // marker (an unmarked file is v1, the pre-marker generation).
-export const ROOT_TEMPLATE_VERSION = 20
+export const ROOT_TEMPLATE_VERSION = 23
 
 /** The version a live contract file carries; unmarked files predate markers. */
 export function templateVersion(content: string): number {
@@ -155,6 +155,44 @@ The app-owned \`order.json\` has this shape:
 
 An idea absent from \`states\` is in the pool. An in-pool state entry may carry \`release\` without a \`state\`; \`state\` is present only for \`promoted\` or \`setaside\`. An idea absent from \`positions\` follows positioned ideas in its tier, ordered by \`added\` then id. A missing or malformed \`order.json\` means every idea stays in the pool in that default order. The app records an unfinished shipped feature in \`returned\` when no agent-owned idea file exists; it appears in its lane with no body, marked \`returned from <version>\`. A later \`<id>.md\` remains agent-owned and wins for every field it declares, without creating a second row. The resolved candidate release is \`states[id].release\`, then the idea's optional \`candidate\`, then unassigned; the reviewer's app-owned view therefore wins.
 
+### Feature requests
+
+A **feature request** is a roadmap idea the reviewer said, filed with extra optional frontmatter. It is the same file: Roadmap keeps working on it, and an idea without these keys loads as before. **Whenever you see a suggestion from the reviewer — in a review, a check, a thread or chat — file it at once** (create \`<id>.md\`, or add the keys to the idea that already exists) so the reviewer can find it and see what became of it. The app lists every idea with \`by: reviewer\` in its **Feature requests** tab.
+
+\`\`\`markdown
+---
+id: export-keeps-filters
+title: Export keeps the active filters
+tier: functionality
+added: 2026-01-15
+by: reviewer
+said:
+  where: a test request (preview.2)
+  when: 2026-01-15
+  link: dtc://open/example-app/2026-01-15-example-app-0.4.0-preview.2-check
+quote: "the export ignores my filters - I get every row, not the ones on screen"
+context: Exporting a filtered list wrote every row instead of the visible ones.
+plan: Apply the active filters when exporting.
+fate: building
+fate_note: in 0.4.0-preview.3
+related: [ticket-12, release-0.4.0, review-2026-01-15-sign-in-journeys]
+candidate: 0.4.0
+---
+
+Free-text body: the longer story, written for the agent.
+\`\`\`
+
+- \`by\`: \`reviewer\` (the reviewer said it; older records may say \`by: dominik\`, read it as \`reviewer\`) or \`agent\` (the agent proposed it). Only \`by: reviewer\` ideas are feature requests.
+- \`said\`: \`where\`, \`when\` and \`link\` of where the reviewer said it. \`quote\`: the reviewer's exact words. For more than one quote, write both as lists, in the same order.
+- \`context\`: your summary of the whole point, across every place it was said. \`plan\`: your next step. \`candidate\`: the release it is aimed at.
+- \`fate\`: exactly one of \`waiting | planned | building | built | merged | declined\`. \`waiting\` means it needs the reviewer's pick; the app then lists it in Waiting on you with buttons. **Keep \`fate\` current**: when work lands, a plan changes or a release moves, edit it in the same turn. A request with no \`plan\` or no \`fate\` shows as "No plan yet" and counts as owed by you. An unknown \`fate\` value is read as no fate.
+- \`fate_note\`: which release it is in, what it merged into, or why it was declined. \`related\`: record ids or \`dtc://\` links (a request file name, \`release-<version>\`, another idea's id); the app shows each as a chip with its state.
+- **Approval and the Roadmap.** The **Roadmap** tab shows approved ideas grouped by release. An idea is approved when its \`fate\` is \`planned\` or \`building\`, or when it has no \`by: reviewer\` (an idea an agent proposed). A \`by: reviewer\` idea with \`fate: waiting\` stays in Feature requests until the reviewer presses **Approve → Roadmap**. That press writes \`fate: planned\` and \`candidate: <pending version>\` into the idea's frontmatter and appends a \`## Reviewer entry · <date> · Approved for the roadmap\` section; moving a card between releases rewrites \`candidate\` (Unscheduled removes the line). The app owns exactly those two keys on the pool idea file and edits nothing else in the frontmatter.
+- **The pending version is derived, never written.** It is the next minor after the highest \`releases/<version>.md\` record (0.22.0 in flight gives 0.23.0). **Never create \`releases/<next>.md\` while an earlier release is in flight**: the app shows only the highest release record as in flight, so plan later releases as \`candidate:\` on ideas. A candidate whose release already has a record is read as in Releases, not on the Roadmap.
+- **When a release ships, you mark it shipped.** Do it in the release's own record, if the reviewer has not already shipped it from the app: write \`releases/<version>.shipped.json\` with \`app\`, \`release\`, \`notes\`, \`shippedAt\` (ISO time) and \`returnedFeatureIds\` (\`[]\` when every feature is built), the same shape the app writes. A release record with that file is shipped, and the Roadmap then derives the next pending version. The next pending version then appears by itself, empty.
+- **Two prompts hand work to you.** The reviewer can copy them from Feature requests. (1) *Ask an agent to plan this*: open the idea file named in the prompt, fill in \`context\`, \`plan\`, \`fate\` and \`related\` per this section, and reply with the \`dtc://\` link. (2) *Review all requests*: go through every \`by: reviewer\` idea in the project (or every project), give each a \`plan\` and \`fate\`, propose priorities and releases as \`candidate\`, and file a doc-review for the reviewer's approval of the proposed order. Do not set \`fate: planned\` on a \`waiting\` request yourself: approval is the reviewer's yes.
+- The reviewer's answers from the card are appended to the idea's body as \`## Reviewer entry · <date> · <answer>\` sections, with the reviewer's words under the heading. **Read them.** Answer with a \`## Agent entry · <date>\` section and update \`fate\` and \`plan\`. A \`waiting\` request whose last entry is the reviewer's stays out of Waiting on you until you add yours.
+
 ## Handoffs
 
 \`<project>/handoffs/YYYY-MM-DD-<slug>-handoff.md\` records a stopped thread an agent can continue. Use \`_unfiled/handoffs/\` when the thread has no product repo. The project is the containing folder name; do not repeat it in frontmatter. Skip \`README.md\`, \`AGENTS.md\` and \`CLAUDE.md\`.
@@ -217,7 +255,7 @@ Rendering mode: optional frontmatter \`mode\`: \`light\` = single-screen light s
 
 ### Park the rest — \`## Also worth checking\`
 
-Edge cases, hidden behaviours, regressions, the incidentals — everything that is not a key feature — go in a final \`## Also worth checking\` section. It is **reference, not a task**: no \`**Steps**\`, and no verdict is ever demanded of the reviewer. It exists so (a) the reviewer can glance and *choose* to poke one, and (b) a later agent, an automated sweep, or a unit test can pick them up. **Prefer writing these as automated tests** over ever asking him to run them — that is where hidden behaviour belongs.
+Edge cases, hidden behaviours, regressions, the incidentals — everything that is not a key feature — go in a final \`## Also worth checking\` section. It is **reference, not a task**: no \`**Steps**\`, and no verdict is ever demanded of the reviewer. It exists so (a) the reviewer can glance and *choose* to poke one, and (b) a later agent, an automated sweep, or a unit test can pick them up. **Prefer writing these as automated tests** over ever asking the reviewer to run them — that is where hidden behaviour belongs.
 
 \`## Also worth checking\` keeps its **reserved name**, and \`Also worth checking\` is a **reserved opening phrase**. The parked heading is recognised loosely, allowing trailing punctuation or a parenthetical. Do not begin any check heading with it. A heading that begins with the phrase but does not match the parked heading is treated as an ordinary check; its generated \`also-\` id will collide with the parked convention. Keep the reserved heading as the **last section**. Parked ids share the document-order id set with checks, so moving this section between regenerations can shift ids and make \`reconcile\` mark a previously answered parked item \`removed\`.
 
@@ -474,7 +512,7 @@ A **thread** is a durable, project-scoped topic: the record of WHY. Reports reco
 Frontmatter — only \`thread:\` is required:
 
 - \`thread\` — kebab-case id. \`title\` — a short human name for the thread.
-- \`by\` — whose content: \`reviewer\` | \`agent\`. Older records use \`dominik\` for \`reviewer\`; read it as the same. \`written_by\` — who created the file. Transcribing the reviewer: \`by: reviewer\`, \`written_by: agent\`.
+- \`by\` — whose content: \`reviewer\` | \`agent\`. Older records may say \`by: dominik\`; read it as \`reviewer\`. \`written_by\` — who created the file. Transcribing the reviewer: \`by: reviewer\`, \`written_by: agent\`.
 - \`at\` — ISO timestamp (else taken from the filename date/time).
 - \`projects: [..]\` — 0..n; membership lives HERE, never in the folder. \`parents: [..]\` — thread ids this grew out of; zero is legal (unattributable is fine).
 - \`move\` — whose turn: \`me\` (blocked on the reviewer) · \`agent\` (ready to hand off) · \`nobody\`.

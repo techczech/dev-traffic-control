@@ -1,4 +1,5 @@
 import type { BrowserWindow } from 'electron'
+import type { LinkLift } from './pinInvariant'
 
 export function isHiddenWindowTestMode(env: NodeJS.ProcessEnv = process.env): boolean {
   // Harnesses commonly write 0 or false explicitly; neither should hide the app.
@@ -33,6 +34,13 @@ export interface BringForwardOptions {
   pinnedPeerExists: () => boolean
   /** macOS: activate the app even when another app is frontmost. */
   focusApp?: () => void
+  /** Set while the window is lifted above a pinned peer (see pinInvariant.ts). */
+  lift?: LinkLift
+  /**
+   * Calls `listener` on his first touch of the window: a click, a key, a drag.
+   * Returns a function that stops listening.
+   */
+  watchInteraction?: (listener: () => void) => () => void
 }
 
 /**
@@ -43,9 +51,10 @@ export interface BringForwardOptions {
  * A pinned sidebar shares the `floating` level with any older pinned one, so
  * ordering it to the top of that level is enough. An ordinary window cannot
  * sit above a floating one, so while a pinned peer exists it is lifted one
- * step above the floating level until it first loses focus, then dropped back
- * to an ordinary window (unless he pinned it meanwhile). Hidden test mode
- * never shows or raises anything.
+ * step above the floating level until it first loses focus OR he first touches
+ * it, whichever comes first, then dropped back to an ordinary window (unless he
+ * pinned it meanwhile; a pin only ever holds on a sidebar-sized window, see
+ * pinInvariant.ts). Hidden test mode never shows or raises anything.
  */
 export function bringWindowForward(win: ForwardableWindow, options: BringForwardOptions): void {
   if (options.hiddenTestMode || win.isDestroyed()) return
@@ -54,9 +63,19 @@ export function bringWindowForward(win: ForwardableWindow, options: BringForward
   options.focusApp?.()
   if (!options.isPinned() && options.pinnedPeerExists()) {
     win.setAlwaysOnTop(true, 'floating', 1)
-    win.once('blur', () => {
+    if (options.lift) options.lift.active = true
+    let ended = false
+    let stopWatching: (() => void) | undefined
+    const endLift = (): void => {
+      if (ended) return
+      ended = true
+      stopWatching?.()
+      if (options.lift) options.lift.active = false
       if (!win.isDestroyed() && !options.isPinned()) win.setAlwaysOnTop(false)
-    })
+    }
+    win.once('blur', endLift)
+    stopWatching = options.watchInteraction?.(endLift)
+    if (ended) stopWatching?.()
   }
   win.moveTop()
   win.focus()
@@ -69,7 +88,7 @@ export function configureWindowVisibility(
   reveal: () => void = () => win.show()
 ): void {
   // Estate verification rule: Electron tests run in a hidden, unthrottled
-  // window; headed windows are reserved for checks Dominik is watching.
+  // window; headed windows are reserved for checks the reviewer is watching.
   if (hiddenTestMode) win.webContents.setBackgroundThrottling(false)
 
   win.on('ready-to-show', () => {

@@ -133,7 +133,7 @@ function withoutMarkupOf<T extends { markups?: PictureMarkup[] }>(holder: T, pic
   return next
 }
 
-/** Materialise a parked item only when Dominik chooses to test it. */
+/** Materialise a parked item only when the reviewer chooses to test it. */
 export function ensureItem(r: QaReport, id: string, title: string): QaReport {
   if (r.items.some((item) => item.id === id)) return r
   return {

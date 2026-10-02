@@ -1,0 +1,542 @@
+/* ===========================================================================
+   Roadmap grouped by release (ticket 42). Drawn in
+   docs/design/2026-10-01-roadmap-releases/ (road-a-* columns, road-b-* list,
+   ship-wide, req-card-*). Wide and narrow follow the container, because the
+   window can be narrow with the project list beside it.
+   =========================================================================== */
+.rr-view {
+  container-type: inline-size;
+  container-name: rrq;
+  overflow: auto;
+  align-content: start;
+}
+.rr-head .fr-title {
+  font-size: 18px;
+}
+.rr-waiting {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border: 1.5px solid #63a29c;
+  border-radius: 999px;
+  background: #d4ebe8;
+  color: #075b55;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: left;
+}
+.rr-waiting svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+.rr-switch {
+  display: inline-flex;
+}
+.rr-switch .roadmap-pool-filter {
+  border-radius: 0;
+  margin-left: -1px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+}
+.rr-switch .roadmap-pool-filter:first-child {
+  border-radius: 8px 0 0 8px;
+  margin-left: 0;
+}
+.rr-switch .roadmap-pool-filter:last-child {
+  border-radius: 0 8px 8px 0;
+}
+.rr-tiers-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px 18px 0;
+  background: #f6f4ef;
+}
+.rr-inflight {
+  color: var(--rp-muted);
+  font-size: 12.5px;
+}
+.rr-none {
+  margin: 0;
+  padding: 10px 18px;
+  color: var(--rp-muted);
+  font-size: 13px;
+}
+
+/* ---- the fallback: no release record to derive a pending version from ---- */
+.rr-start {
+  padding: 12px 18px;
+}
+.rr-start p {
+  margin: 6px 0 0;
+  color: var(--rp-muted);
+  font-size: 12px;
+}
+.rr-start form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rr-start input,
+.rr-menu-new input {
+  padding: 6px 9px;
+  border: 1px solid var(--rp-edge);
+  border-radius: 7px;
+  font: inherit;
+  font-size: 13px;
+}
+.rr-start-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border: 1.5px dashed var(--rp-accent);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--rp-accent-deep);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+}
+.rr-start-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ---- buttons, chips ---- */
+.rr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 1px solid var(--rp-edge);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--rp-ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+.rr-btn svg {
+  width: 14px;
+  height: 14px;
+}
+.rr-btn.first {
+  border-color: var(--rp-accent);
+  background: var(--rp-accent);
+  color: #fff;
+}
+.rr-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+.rr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 3px 9px;
+  border: 1px solid #cfc9be;
+  border-radius: 999px;
+  background: #e8e6e1;
+  color: #3c4148;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.rr-chip svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+.rr-chip.tier {
+  border-radius: 6px;
+}
+.rr-chip.quote {
+  border-color: #63a29c;
+  background: #d4ebe8;
+  color: #075b55;
+}
+.rr-chip.agent {
+  border-style: dashed;
+  background: #fff;
+  color: #61676e;
+}
+.rr-chip.ok {
+  border-color: var(--rp-accent);
+  background: #fff;
+  color: var(--rp-accent-deep);
+}
+
+/* ---- groups ---- */
+.rr-groups {
+  padding: 14px 18px 24px;
+}
+.rr-group {
+  position: relative;
+  border: 1.5px solid #d9d3c7;
+  background: #ece9e1;
+  border-radius: 12px;
+  padding: 12px;
+}
+.rr-group.k-pending {
+  border: 2px solid var(--rp-accent);
+  background: #d9eeea;
+}
+.rr-group.k-unscheduled {
+  border: 1.5px dashed #b9b2a4;
+  background: transparent;
+}
+.rr-group.over {
+  outline: 3px solid rgb(15 118 110 / 35%);
+}
+.rr-group-h {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--rp-ink);
+  font: inherit;
+  text-align: left;
+}
+.rr-group-h:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.rr-group-h strong {
+  font-size: 18px;
+  font-weight: 800;
+}
+.rr-group-h .n {
+  color: var(--rp-muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+.rr-badge {
+  align-self: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--rp-accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.rr-sub {
+  margin: 4px 0 10px;
+  color: var(--rp-muted);
+  font-size: 12.5px;
+}
+.rr-emptybox,
+.rr-drop {
+  margin: 8px 0;
+  padding: 16px 12px;
+  border: 2px dashed var(--rp-accent);
+  border-radius: 10px;
+  color: var(--rp-accent-deep);
+  font-size: 13.5px;
+  font-weight: 800;
+  text-align: center;
+}
+.rr-drop {
+  background: rgb(15 118 110 / 8%);
+}
+.rr-more {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1.5px dashed #b9b2a4;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--rp-ink-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* ---- cards ---- */
+.rr-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 8px;
+  margin-top: 8px;
+  padding: 11px 12px;
+  border: 1px solid #d6d0c4;
+  border-radius: 10px;
+  background: #fff;
+}
+.rr-card.sel {
+  border: 2px solid var(--rp-accent);
+  padding: 10px 11px;
+}
+.rr-card[draggable='true'] {
+  cursor: grab;
+}
+.rr-grip {
+  width: 14px;
+  height: 14px;
+  margin-top: 3px;
+  color: var(--rp-faint);
+}
+.rr-main h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--rp-ink);
+}
+.rr-moveto {
+  grid-column: 2;
+  justify-self: start;
+  margin-top: 8px;
+  display: none;
+}
+.rr-card:hover .rr-moveto,
+.rr-card.sel .rr-moveto,
+.rr-card.menu-open .rr-moveto,
+.rr-card:focus-within .rr-moveto {
+  display: inline-flex;
+}
+
+/* ---- Move to… ---- */
+.rr-menu {
+  position: absolute;
+  z-index: 40;
+  right: 6px;
+  top: calc(100% - 6px);
+  width: min(270px, calc(100% - 12px));
+  padding: 8px;
+  border: 1px solid #b9b2a4;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgb(26 30 35 / 18%);
+}
+.rr-menu-h {
+  padding: 4px 8px 6px;
+  color: var(--rp-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.rr-menu-rule {
+  height: 1px;
+  margin: 5px 0;
+  background: var(--rp-line);
+}
+.rr-menu-i {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--rp-ink);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+}
+.rr-menu-i svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+.rr-menu-i .n {
+  flex: 1;
+  font-weight: 800;
+}
+.rr-menu-i .c {
+  color: var(--rp-muted);
+  font-size: 12px;
+}
+.rr-menu-i.current {
+  background: #d9eeea;
+  color: var(--rp-accent-deep);
+  opacity: 1;
+}
+.rr-menu-i.active:not(.current),
+.rr-menu-i:hover:not(:disabled) {
+  background: #f1efe9;
+}
+.rr-menu-new {
+  display: grid;
+  gap: 6px;
+  padding: 4px 8px 6px;
+}
+.rr-menu-new label {
+  font-size: 12px;
+  font-weight: 800;
+}
+.rr-menu-problem {
+  margin: 0;
+  color: #8a3226;
+  font-size: 12px;
+}
+
+/* ---- columns (wide) ---- */
+.rr-columns .rr-groups {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(260px, 1fr);
+  gap: 14px;
+  align-items: start;
+  overflow-x: auto;
+}
+
+/* ---- list ---- */
+.rr-list .rr-groups {
+  padding: 0 0 18px;
+}
+.rr-list .rr-group {
+  border: 0;
+  border-bottom: 2px solid #cfc9be;
+  border-radius: 0;
+  padding: 0;
+}
+.rr-list .rr-group.k-pending {
+  background: transparent;
+}
+.rr-list .rr-group.k-unscheduled {
+  border-left: 4px solid #b9b2a4;
+  background: #ece9e1;
+}
+.rr-list .rr-group-h {
+  align-items: center;
+  padding: 10px 18px;
+  background: #ece9e1;
+}
+.rr-list .rr-group.k-pending .rr-group-h {
+  background: #d9eeea;
+}
+.rr-list .rr-group-h .sub {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--rp-muted);
+  font-size: 12.5px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rr-list .rr-group-h svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--rp-muted);
+}
+.rr-list .rr-card {
+  grid-template-columns: auto 1fr auto;
+  margin: 0;
+  padding: 10px 18px;
+  border: 0;
+  border-bottom: 1px solid var(--rp-line);
+  border-radius: 0;
+}
+.rr-list .rr-card.sel {
+  border: 2px solid var(--rp-accent);
+  background: #eaf4f2;
+}
+.rr-list .rr-moveto {
+  display: inline-flex;
+  grid-column: 3;
+  grid-row: 1;
+  align-self: start;
+  margin-top: 0;
+}
+.rr-list .rr-menu {
+  right: 18px;
+  top: calc(100% - 10px);
+}
+.rr-list .rr-more,
+.rr-list .rr-emptybox,
+.rr-list .rr-drop {
+  width: auto;
+  margin: 8px 18px;
+}
+
+/* ---- narrow: the columns stack as lanes and every card has Move to… ---- */
+@container rrq (max-width: 760px) {
+  .rr-columns .rr-groups {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    grid-template-columns: minmax(0, 1fr);
+    overflow-x: visible;
+  }
+  .rr-moveto {
+    display: inline-flex;
+  }
+  .rr-waiting {
+    font-size: 12.5px;
+  }
+  .rr-list .rr-card {
+    grid-template-columns: auto 1fr;
+    padding-inline: 12px;
+  }
+  .rr-list .rr-moveto {
+    grid-column: 2;
+    grid-row: auto;
+    margin-top: 8px;
+  }
+  .rr-list .rr-group-h {
+    flex-wrap: wrap;
+  }
+  .rr-list .rr-group-h .sub {
+    flex-basis: 100%;
+    text-align: left;
+    order: 5;
+  }
+  .rr-list .rr-menu {
+    right: auto;
+    left: 12px;
+  }
+}
+
+/* ---- Feature requests additions (ticket 42) ---- */
+.fr-tally {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.fr-note {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  margin-top: 10px;
+  padding: 9px 12px;
+  border: 1px solid #63a29c;
+  border-radius: 8px;
+  background: #d9eeea;
+  color: #0b4f49;
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+.fr-note svg {
+  width: 15px;
+  height: 15px;
+  margin-top: 2px;
+  flex: none;
+}
+@container frq (max-width: 700px) {
+  .fr-tally {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* The surface scrolls as one; nothing inside it shrinks. An open Move to… menu
+   hangs below its card, so the groups leave room for it instead of clipping it. */
+.rr-view > * {
+  flex-shrink: 0;
+}
+.rr-groups:has(.rr-menu) {
+  padding-bottom: 330px;
+}

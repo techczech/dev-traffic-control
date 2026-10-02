@@ -348,7 +348,7 @@ describe('WindowManager', () => {
     // 0.21.0-alpha.3: a dtc:// link opened a second window, the allocator read
     // only the persisted list, and the new window was handed the slot the open
     // window was on. The next setWindowScope on that slot changed the project
-    // of the window Dominik was reading — breaking the rule that a link never
+    // of the window the reviewer was reading — breaking the rule that a link never
     // touches a window that already exists.
     const { store, manager } = await harness()
     const open = new FakeWindow('open')

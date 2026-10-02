@@ -4,7 +4,7 @@ import { ROOT_AGENTS_MD, ROOT_TEMPLATE_VERSION } from '../templates'
 
 describe('root contract — handoffs', () => {
   test('documents the reserved record-folder layout and ownership split', () => {
-    expect(ROOT_TEMPLATE_VERSION).toBe(20)
+    expect(ROOT_TEMPLATE_VERSION).toBe(23)
     expect(ROOT_AGENTS_MD).toContain('handoffs/')
     expect(ROOT_AGENTS_MD).toContain('YYYY-MM-DD-<slug>-handoff.md')
     expect(ROOT_AGENTS_MD).toContain('YYYY-MM-DD-<slug>-handoff.state.json')

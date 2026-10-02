@@ -11,7 +11,7 @@ import { reportPathFor } from '../../../../main/qa/report'
 import { TicksStore } from '../../../../main/ticks'
 
 /**
- * The tick checks Dominik abandoned in the 0.2.0 heavy request (`tick-click`,
+ * The tick checks the reviewer abandoned in the 0.2.0 heavy request (`tick-click`,
  * `tick-space`) plus the invariant with real consequences for a collecting
  * agent: a tick is a pencil mark that never reaches report.json.
  */

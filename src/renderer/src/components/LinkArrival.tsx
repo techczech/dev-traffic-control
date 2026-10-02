@@ -1,8 +1,9 @@
-import { Clock, Folder, Layers, Link2, RefreshCw, ShieldAlert, X } from 'lucide-react'
+import { useState } from 'react'
+import { Check, Clock, Copy, Folder, Layers, Link2, RefreshCw, ShieldAlert, X } from 'lucide-react'
 import { useApp } from '../state/app'
 import { projectDisplayName } from '../lib/projectStanding'
 import { formatFullAge } from '../lib/dateVocabulary'
-import type { DeepLinkLanding } from '../../../shared/deepLink'
+import { inertLinkText, type DeepLinkLanding } from '../../../shared/deepLink'
 
 /**
  * What a `dtc://` link looks like when it arrives (mockup states 19–22).
@@ -13,9 +14,10 @@ import type { DeepLinkLanding } from '../../../shared/deepLink'
  *   already running, saying in as many words that no other window moved.
  * - **behind** — amber clock, the project named, and a button that pulls and
  *   then opens. The link is fine; the file has not arrived.
- * - **refused** — red shield, no project, no path, and nothing to press but
- *   close. Retrying is exactly what must not be offered, because the link is
- *   the problem.
+ * - **refused** — red shield, no project, and nothing to press but close and
+ *   copy. Retrying is exactly what must not be offered, because the link is
+ *   the problem. The link itself is shown back as inert text (ticket 40) so
+ *   The reviewer can send it to the agent that wrote it.
  *
  * If sync lag ever wore the red shield, the red shield would stop meaning
  * anything — which is why the two are drawn side by side and built apart.
@@ -88,9 +90,51 @@ export function LinkArrivalBanner(): React.JSX.Element | null {
 }
 
 /**
- * The two states that replace the surface rather than sitting above it. Neither
- * shows a path: the refusal must not become a way to display what the link was
- * aiming at, and the sync-lag state has nothing useful to show but the project.
+ * The refused link, shown back as text and nothing more (ticket 40).
+ *
+ * It is the string that arrived, cleaned of control and bidirectional
+ * characters and cut to about 200 characters (`inertLinkText`). It is rendered
+ * as a React text node in a `<code>`: never an anchor, never an `href`, never
+ * parsed, decoded or resolved, so there is nothing in it to click or follow.
+ */
+export function RefusedLinkText({ url }: { url: string | undefined }): React.JSX.Element | null {
+  const [copied, setCopied] = useState(false)
+  const { display, copy } = inertLinkText(url)
+  if (!display) return null
+  return (
+    <div className="refused-link">
+      <code className="refused-link-text" aria-label="The refused link" translate="no">
+        {display}
+      </code>
+      <div className="refused-link-row">
+        <span className="refused-link-hint">Send this to the agent that gave it to you.</span>
+        <button
+          type="button"
+          className="secbtn"
+          onClick={() => {
+            void navigator.clipboard
+              ?.writeText(copy)
+              .then(() => setCopied(true))
+              .catch(() => {})
+          }}
+        >
+          {copied ? (
+            <Check className="ic" strokeWidth={2} />
+          ) : (
+            <Copy className="ic" strokeWidth={2} />
+          )}
+          {copied ? 'Copied' : 'Copy'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The two states that replace the surface rather than sitting above it. The
+ * refusal shows the link only as inert text (`RefusedLinkText`) and never what
+ * it would have opened; the sync-lag state has nothing useful to show but the
+ * project.
  */
 export function LinkArrivalTakeover({
   arrival
@@ -111,6 +155,7 @@ export function LinkArrivalTakeover({
           Dev Traffic Control only ever opens files inside your record folder. This link aimed
           somewhere else, so it was turned away before anything was read.
         </p>
+        <RefusedLinkText url={arrival.url} />
         <p className="aside">
           Any web page can fire a link like this one, so a link that reaches past the folder is
           always refused rather than checked.

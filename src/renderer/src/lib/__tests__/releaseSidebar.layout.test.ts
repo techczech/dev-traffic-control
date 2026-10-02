@@ -73,8 +73,11 @@ describe('the guard measures what the app actually loads', () => {
       'src/renderer/src/assets/link-arrival.css',
       'src/renderer/src/assets/fleet.css',
       'src/renderer/src/assets/project-home.css',
+      'src/renderer/src/assets/waiting-rows.css',
       'src/renderer/src/assets/markup.css',
-      'src/renderer/src/assets/get-started.css'
+      'src/renderer/src/assets/get-started.css',
+      'src/renderer/src/assets/feature-requests.css',
+      'src/renderer/src/assets/roadmap-releases.css'
     ])
   }, 30_000)
 

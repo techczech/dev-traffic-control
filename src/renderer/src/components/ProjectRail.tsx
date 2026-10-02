@@ -68,7 +68,7 @@ export function ProjectRail({
   } = useApp()
   const [query, setQuery] = useState('')
   // Records whose title or text match the box, not just project names
-  // (Dominik 2026-09-27: "I need a way to search by content of items and title").
+  //.
   const [hits, setHits] = useState<RecordSearchHit[]>([])
   const needle = query.trim()
   useEffect(() => {

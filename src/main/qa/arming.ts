@@ -3,7 +3,7 @@ import { atomicWrite } from './atomicWrite'
 
 /**
  * Ticket 16. Opening a request tells the record so: `<basename>.opened.json`
- * beside it. An agent that handed Dominik the link waits on this file,
+ * beside it. An agent that handed the reviewer the link waits on this file,
  * without spending tokens, and starts its heartbeat watch only once he has
  * arrived (dev-traffic-control skill, report-lifecycle § Active watches: two phases).
  */

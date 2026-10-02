@@ -6,7 +6,7 @@ import type { Handoff } from '../../../../main/qa/handoffs'
 import type { WindowScope } from '../../../../shared/windowScope'
 
 /**
- * Ticket 13. Dominik installed the build, clicked a project in the rail, and
+ * Ticket 13. The reviewer installed the build, clicked a project in the rail, and
  * the Dashboard still said "All projects" and still listed every project's
  * work. These render the two surfaces that were blind to the scope and ask
  * what he would have seen.
@@ -154,7 +154,9 @@ describe('Dashboard follows the window scope', () => {
     render(<Dashboard />)
 
     const panel = screen.getByRole('region', { name: 'Handoffs ready' })
-    expect(panel.querySelectorAll('button.fleet-r')).toHaveLength(4)
+    // Ticket 37: a handoff here is the same row as on the Project Dash.
+    expect(panel.querySelectorAll('[data-waiting-row]')).toHaveLength(4)
+    expect(within(panel).getAllByRole('button', { name: /Pick up/ })).toHaveLength(4)
     expect(within(panel).getByText('17 more handoffs ready')).toBeTruthy()
     expect(panel.querySelector('header .n')?.textContent).toBe('21')
     const tile = screen.getByText('handoffs ready').closest('.fleet-tile')
@@ -167,7 +169,7 @@ describe('Dashboard follows the window scope', () => {
     render(<Dashboard />)
 
     const panel = screen.getByRole('region', { name: 'Handoffs ready' })
-    expect(panel.querySelectorAll('button.fleet-r')).toHaveLength(2)
+    expect(panel.querySelectorAll('[data-waiting-row]')).toHaveLength(2)
     expect(panel.querySelector('[data-fleet-handoffs-more]')).toBeNull()
   })
 
@@ -199,7 +201,7 @@ describe('Dashboard follows the window scope', () => {
 
   // The heading printed "All projects" while the titlebar named a project. It
   // was corrected to "Dashboard", which then said the same word as the selected
-  // tab directly above it — the duplicate in Dominik's screenshot. ADR-0016's
+  // tab directly above it — the duplicate in the reviewer's screenshot. ADR-0016's
   // design lock allows each thing exactly one naming, so the surface has no
   // heading at all: the tab names it. There is nothing left here to disagree.
   test('it carries no heading of its own, in a project', () => {

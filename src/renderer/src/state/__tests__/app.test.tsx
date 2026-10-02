@@ -172,13 +172,14 @@ function LinkArrivalProbe(): React.JSX.Element {
   )
 }
 
-test('the view reducer reaches the six top-level surfaces in Dashboard-first order', () => {
+test('the view reducer reaches the seven top-level surfaces in Dashboard-first order', () => {
   expect(TOP_LEVEL_SURFACES).toEqual([
     'dashboard',
     'inbox',
     'specs',
     'releases',
     'roadmap',
+    'requests',
     'handoffs'
   ])
 
@@ -197,7 +198,7 @@ test('the view reducer reaches the six top-level surfaces in Dashboard-first ord
   )
   expect(visited).toEqual(new Set(TOP_LEVEL_SURFACES))
   expect(currentView(viewHistoryReducer(history, { type: 'back' }))).toEqual({
-    kind: 'roadmap'
+    kind: 'requests'
   })
 })
 
@@ -209,6 +210,7 @@ test('every surface and nested view reaches Dashboard in one reducer transition'
     { kind: 'specs', mode: 'questions', questionKey: 'spec:question' },
     { kind: 'releases' },
     { kind: 'roadmap' },
+    { kind: 'requests' },
     { kind: 'handoffs' },
     { kind: 'thread', project: 'dev-traffic-control', thread: 'tabs' },
     { kind: 'runner', path: '/dtc/light.md' },

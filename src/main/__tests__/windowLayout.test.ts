@@ -157,7 +157,7 @@ describe('dock-to-side window layout', () => {
   })
 })
 
-// Dominik 2026-09-23: expand did not widen enough to show the rail, did not
+// Expand did not widen enough to show the rail, did not
 // unpin, and could push part of the window off screen.
 describe('expanding the window', () => {
   const inside = (b: WindowBounds, wa: WindowBounds): boolean =>

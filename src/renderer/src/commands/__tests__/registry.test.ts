@@ -90,14 +90,15 @@ describe('command registry', () => {
     }
   })
 
-  test('the six top-level surfaces are registered in Overview-first bar order', () => {
+  test('the seven top-level surfaces are registered in Overview-first bar order', () => {
     const surfaces = [
       ['nav.dashboard', 'Go to Overview', 'Mod+1'],
       ['nav.inbox', 'Go to Inbox', 'Mod+2'],
       ['nav.specs', 'Go to Specs', 'Mod+3'],
       ['nav.releases', 'Go to Releases', 'Mod+4'],
       ['nav.roadmap', 'Go to Roadmap', 'Mod+5'],
-      ['nav.handoffs', 'Go to Handoffs', 'Mod+6']
+      ['nav.handoffs', 'Go to Handoffs', 'Mod+6'],
+      ['nav.requests', 'Go to Feature requests', 'Mod+7']
     ]
 
     const surfaceCommands = COMMANDS.filter((command) =>

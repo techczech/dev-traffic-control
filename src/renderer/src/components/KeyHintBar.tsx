@@ -56,7 +56,7 @@ export function KeyHintBar(): React.JSX.Element {
       <span className="grow" />
       {/* The build marker lives here rather than in the titlebar: it is
           reference, not chrome, and in the header it pushed the controls
-          around (Dominik, 2026-09-13). */}
+          around. */}
       {version && <span className="buildmark">{shortVersion(version)}</span>}
       <button className="helpbtn" aria-label="Keyboard shortcuts" onClick={() => setHelpOpen(true)}>
         <HelpCircle className="ic s" strokeWidth={2} />

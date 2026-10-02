@@ -1322,8 +1322,7 @@ export function Reading({
                 className="doc readdoc quotable"
                 ref={setDocEl}
                 data-find-scope
-                // Any picture in the document opens large (Dominik 2026-09-26:
-                // "there should be a way to zoom in on images"). Delegated, so
+                // Any picture in the document opens large. Delegated, so
                 // every image the document renders gets it.
                 onClick={(event) => {
                   const target = event.target as HTMLElement

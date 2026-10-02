@@ -3,7 +3,7 @@ import { ROOT_AGENTS_MD, ROOT_TEMPLATE_VERSION } from '../templates'
 
 describe('root contract — roadmap pool', () => {
   test('documents both file shapes and the ownership split at a new template version', () => {
-    expect(ROOT_TEMPLATE_VERSION).toBe(20)
+    expect(ROOT_TEMPLATE_VERSION).toBe(23)
     expect(ROOT_AGENTS_MD).toContain('roadmap/')
     expect(ROOT_AGENTS_MD).toContain('<id>.md')
     expect(ROOT_AGENTS_MD).toContain('order.json')

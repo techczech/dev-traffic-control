@@ -124,7 +124,7 @@ export interface SectionMark {
 }
 /**
  * An answered decision toggle (reviews). Agents embed a ```decision block —
- * a question with clickable options — so Dominik answers with a click instead
+ * a question with clickable options — so the reviewer answers with a click instead
  * of a comment. The pick lands here as structured data, kept separate from
  * `quotes[]`/`comment` (which stay reserved for actual text).
  */

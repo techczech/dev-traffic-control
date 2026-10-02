@@ -8,7 +8,7 @@ import {
 } from '../shared/requestIdentity'
 
 /**
- * App-local inbox state (relief pass R4): which requests Dominik has already
+ * App-local inbox state (relief pass R4): which requests the reviewer has already
  * opened (so the Inbox can mark the rest NEW) and which he has archived (so
  * they leave the default view). Keyed by request basename, stored in
  * `userData/inbox-state.json` — NEVER in the record repo. The app may not edit or

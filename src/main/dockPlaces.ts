@@ -2,7 +2,7 @@ import type { DockEdge, DockMenuState, DockPlaceId } from '../shared/ipc'
 import type { WindowBounds } from './windowLayout'
 
 /**
- * Where the Dock button puts the sidebar (Dominik 2026-09-28, ticket 27): the
+ * Where the Dock button puts the sidebar: the
  * right or left edge, of the screen the window is on or of the other screen.
  *
  * "This screen" is the display the window is on when he chooses; "other
@@ -79,6 +79,54 @@ export function dockBounds(
 }
 
 const PLACE_ORDER: readonly DockPlaceId[] = ['right-this', 'left-this', 'right-other', 'left-other']
+
+/** Clicks on the Dock button closer together than this are one cycling run (ticket 41). */
+export const DOCK_REPEAT_MS = 4000
+
+/**
+ * A run of repeated clicks on the Dock button's main part. The four places are
+ * named from the screen the run started on, because after one step to the other
+ * screen the window's "this screen" has changed under it.
+ */
+export interface DockCycle {
+  /** When the last click of the run happened. */
+  at: number
+  /** The place that click docked at. */
+  place: DockPlaceId
+  /** The display the run started on. */
+  originId: number
+}
+
+/**
+ * What a click on the Dock button's main part does. The first click, or one
+ * more than `DOCK_REPEAT_MS` after the previous, docks at the last-used place
+ * (as before ticket 41). A repeat steps to the next of the four places in the
+ * order right/this, left/this, right/other, left/other, wrapping; with one
+ * display it alternates right and left. Pure: the caller keeps `cycle` and
+ * resets it (null) on any other window action.
+ */
+export function dockClickStep(
+  cycle: DockCycle | null,
+  now: number,
+  remembered: RememberedDockPlace | null,
+  displays: readonly DockDisplay[],
+  currentId: number
+): { target: RememberedDockPlace; cycle: DockCycle } {
+  const repeated = cycle !== null && now - cycle.at <= DOCK_REPEAT_MS && now >= cycle.at
+  if (!repeated) {
+    const last = remembered ?? defaultDockPlace(currentId)
+    const place = placeIdFor(last, displays, currentId)
+    return { target: last, cycle: { at: now, place, originId: currentId } }
+  }
+  const hasOther = otherDisplay(displays, cycle.originId) !== undefined
+  const available = PLACE_ORDER.filter((id) => hasOther || id.endsWith('-this'))
+  const at = available.indexOf(cycle.place)
+  const place = available[(at + 1) % available.length]
+  return {
+    target: resolveDockPlace(place, displays, cycle.originId),
+    cycle: { at: now, place, originId: cycle.originId }
+  }
+}
 
 const PLACE_LABEL: Record<DockPlaceId, string> = {
   'right-this': 'Right edge · this screen',

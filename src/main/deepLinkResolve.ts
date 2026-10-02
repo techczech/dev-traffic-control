@@ -23,8 +23,10 @@ import { ALL_PROJECTS, type WindowScope } from '../shared/windowScope'
  *
  * Neither stage writes anything, and no verb can be made to: a link selects an
  * existing record, it never constructs one. The worst a hostile link achieves
- * is showing Dominik a file he already owns inside his own record folder.
+ * is showing the reviewer a file he already owns inside his own record folder.
  */
+
+const MARKDOWN = '.md'
 
 export type DeepLinkArrival =
   | { kind: 'refused' }
@@ -62,9 +64,23 @@ export async function resolveDeepLinkArrival(
   if (!link) return { kind: 'refused' }
 
   const confine = dependencies.confine ?? confineRecordPath
-  const relative = link.verb === 'open' ? recordRelativePath(link) : link.project
-  const confined = await confine(dependencies.recordRoot, relative)
+  let relative = link.verb === 'open' ? recordRelativePath(link) : link.project
+  let confined = await confine(dependencies.recordRoot, relative)
   if (confined.kind === 'refused') return { kind: 'refused' }
+  if (!confined.exists && link.verb === 'open' && !relative.endsWith(MARKDOWN)) {
+    // Agents often drop the `.md` (ticket 40). The one candidate tried is the
+    // same path with `.md` appended, never another extension, and it goes
+    // through the same confinement gate before anything is read: a `.md` that
+    // is a symlink out of the root is refused, not opened and not reported as
+    // sync lag. Only a candidate that confines AND exists replaces the path.
+    const withMarkdown = `${relative}${MARKDOWN}`
+    const candidate = await confine(dependencies.recordRoot, withMarkdown)
+    if (candidate.kind === 'refused') return { kind: 'refused' }
+    if (candidate.exists) {
+      relative = withMarkdown
+      confined = candidate
+    }
+  }
   if (!confined.exists) return behind(link.project, dependencies)
 
   if (link.verb === 'project') return { kind: 'project', project: link.project }
@@ -151,7 +167,9 @@ export function landingForArrival(
   coldLaunch: boolean,
   records: LandingRecords
 ): DeepLinkLanding {
-  if (arrival.kind === 'refused') return { kind: 'refused', coldLaunch }
+  // The refused link travels as the string that arrived, for the refusal page to
+  // show back as inert text. It is never parsed again past this point.
+  if (arrival.kind === 'refused') return { kind: 'refused', url, coldLaunch }
   if (arrival.kind === 'behind') {
     return {
       kind: 'behind',
@@ -184,8 +202,7 @@ export function landingForArrival(
   const note = authoritativePath(records.notePaths, records.recordRoot, arrival.relative)
   if (note) return opened({ kind: 'note', path: note }, arrival.fragment)
   // Release records, roadmap ideas, handoffs and thread entries open on the
-  // thing itself (Dominik 2026-09-26: links "don't open on the thing but in
-  // the dash"). Anything else confined in the project lands on the project.
+  // thing itself. Anything else confined in the project lands on the project.
   const within = recordWithinProject(arrival.relative, arrival.project)
   const release = within.match(/^releases\/([^/]+)\.md$/)
   if (release)

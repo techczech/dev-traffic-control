@@ -1,9 +1,8 @@
 import type { ProjectListPresentation } from './railVisibility'
 
 /**
- * Ticket 23 (ADR-0016 amendment 2026-09-25). Dominik: "we have two wrong modes
- * in one — project focus mode and project quick browsing mode — they should be
- * very different".
+ * Ticket 23 (ADR-0016 amendment 2026-09-25). Project focus mode and project quick browsing mode
+ * were two modes in one and must be very different.
  *
  * - Browse (wide only): the project list runs full height on the left, and the
  *   project name and tabs sit in the pane beside it.

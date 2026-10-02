@@ -2,6 +2,8 @@ import type { QaSnapshot, SerializableRun } from '../../../shared/ipc'
 import type { PoolTier } from '../../../main/qa/pool'
 import type { ReleaseFeature, ReleaseFeatureStatus } from '../../../main/qa/releaseRecords'
 import { formatDenseAge, formatDenseDay, formatFullAge } from './dateVocabulary'
+import { rowForIdea } from './featureRequests'
+import { isRequestIdeaOwed } from './requestFate'
 import {
   cappedList,
   compareNewest,
@@ -23,6 +25,18 @@ import {
 import { RELEASE_STATE_WORDS, featureReachedAt, type ReleaseStateWord } from './releases'
 import { threadsForProject } from './roadmap'
 import { specRows } from './specs'
+import {
+  agentHandoffDetail,
+  agentThreadDetail,
+  formatWaited,
+  runTitle,
+  waitingForFeature,
+  waitingForHandoff,
+  waitingForRequest,
+  waitingForRun,
+  waitingForThread,
+  type WaitingMeta
+} from './waitingRows'
 
 /**
  * The project home (ADR-0016 amendment, mockup states 9–12): everything about
@@ -44,6 +58,8 @@ export const HOME_LIST_LIMIT = 4
 export const HOME_FEATURE_LIMIT = 8
 /** Questions the release block states before its closing row. */
 export const HOME_QUESTION_LIMIT = 4
+/** Rows "With your agents" draws when opened, before its closing row. */
+export const WITH_AGENTS_LIMIT = 10
 
 /** Where a row leads. Every row on the home is a way in, never a count. */
 export type HomeTarget =
@@ -53,6 +69,8 @@ export type HomeTarget =
   | { kind: 'surface'; surface: 'inbox' | 'specs' | 'releases' | 'roadmap' | 'handoffs' }
   /** A feature waiting on his verdict: opens the verdict sheet at it (ticket 21). */
   | { kind: 'verdict'; id: string }
+  /** Ticket 38: a feature request's card in the Feature requests tab. */
+  | { kind: 'request'; project: string; idea: string }
 
 export interface HomeRow {
   /** Unique on the page — the keyboard selection's address. */
@@ -63,10 +81,15 @@ export interface HomeRow {
   age: string
   /** A second, quieter line; only a round carries one (its rollup). */
   detail?: string
-  /** Where a request stands (Dominik 2026-09-27: "no status on lots of items"). */
+  /** Where a request stands. */
   state?: { label: string; tone: 'you' | 'started' | 'done' }
+  /** Ticket 37: a Waiting row's kind, count line and action. */
+  wait?: WaitingMeta
   target: HomeTarget
 }
+
+/** A Waiting row: a {@link HomeRow} that says what to do. */
+export type HomeWaitingRow = HomeRow & { wait: WaitingMeta }
 
 export interface HomeList<T = HomeRow> extends CappedList<T> {
   /** The full count, for the section header. */
@@ -88,8 +111,7 @@ export interface HomeFeatureRow {
 
 /**
  * One feature the release is stopped on. The title leads, because it says what
- * changed; the how-to-check steps never lead (Dominik 2026-09-23: "the titles
- * are horrible ... not just give the first command").
+ * changed; the how-to-check steps never lead.
  */
 export interface HomeReleaseQuestion {
   key: string
@@ -137,6 +159,13 @@ export interface ProjectHomeModel {
   standing: ProjectStanding
   releaseCall: HomeReleaseCall | null
   waiting: HomeList
+  /**
+   * Every Waiting row, newest first, uncapped. The card arranges these itself
+   * (By kind or Newest first) and draws its own closing row (ticket 37).
+   */
+  waitingAll: HomeWaitingRow[]
+  /** Threads and handoffs whose move is the agent's: nothing here needs him. */
+  withAgents: HomeList
   release: HomeRelease
   requests: HomeList
   notes: HomeList
@@ -230,39 +259,105 @@ export function projectHome(
       : null
 
   // --- waiting on you: exactly what the standing counts ----------------------
-  const owed: HomeRow[] = [
+  const featureCounts = {
+    total: features.length,
+    done: features.filter((feature) => featureStatus(feature) === 'done').length
+  }
+  const owed: HomeWaitingRow[] = [
     ...runs
       .filter((run) => isRequestOwed(run, housekeeping))
-      .map((run) => ({
-        key: `waiting:run:${run.request.path}`,
-        title: run.request.title,
-        ...dated(runAgeSource(run)),
-        target: { kind: 'runner', path: run.request.path } as HomeTarget
-      })),
+      .map((run) => {
+        const at = runAgeSource(run)
+        return {
+          key: `waiting:run:${run.request.path}`,
+          title: runTitle(run),
+          ...dated(at),
+          wait: waitingForRun(run, at, now),
+          target: { kind: 'runner', path: run.request.path } as HomeTarget
+        }
+      }),
     ...threads
       .filter((thread) => isThreadOwed(thread, housekeeping))
       .map((thread) => ({
         key: `waiting:thread:${thread.id}`,
         title: thread.title,
         ...dated(thread.lastAt),
+        wait: waitingForThread(thread, now),
         target: { kind: 'thread', project: slug, thread: thread.id } as HomeTarget
       })),
     ...handoffs.filter(isHandoffReady).map((handoff) => ({
       key: `waiting:handoff:${handoff.path}`,
       title: handoff.title,
       ...dated(handoff.updated),
+      wait: waitingForHandoff(handoff.updated, now),
       target: { kind: 'surface', surface: 'handoffs' } as HomeTarget
     })),
+    // A feature request waiting on his pick is an Answer row (ticket 38).
+    ...ideas
+      .filter((idea) => isRequestIdeaOwed(idea))
+      .map((idea) => {
+        const request = rowForIdea(slug, idea, now)
+        return {
+          key: `waiting:request:${idea.id}`,
+          title: `Your suggestion: ${idea.title}`,
+          ...dated(request.added),
+          wait: waitingForRequest(request, now),
+          target: { kind: 'request', project: slug, idea: idea.id } as HomeTarget
+        }
+      }),
     // Features waiting on him are the release block's when there is one; a
     // shipped release's stragglers still owe, so they are listed here.
     ...(releaseCall ? [] : waitingFeatures).map((feature) => ({
       key: `waiting:feature:${feature.id}`,
       title: feature.title,
       ...dated(recordedAt),
+      wait: waitingForFeature(recordedAt, now, featureCounts),
       target: { kind: 'surface', surface: 'releases' } as HomeTarget
     }))
   ]
-  const waiting = homeList(newestFirst(owed), limit, (n) => `${n} more waiting on you`)
+  // The card draws how long each has waited ("20d"); the capped list keeps the
+  // dense date the rest of the home uses.
+  const waitingAll = newestFirst(owed).map((row) => ({ ...row, age: formatWaited(row.at, now) }))
+  const waiting = homeList(
+    waitingAll.map((row) => ({ ...row, age: formatDenseAge(row.at, now) })),
+    limit,
+    (n) => `${n} more waiting on you`
+  )
+
+  // --- with your agents: moving, and nothing owed by him ----------------------
+  const withAgents = homeList(
+    newestFirst<HomeRow>([
+      ...threads
+        .filter((thread) => thread.move === 'agent' && !housekeeping?.threads.has(thread.id))
+        .map((thread) => ({
+          key: `agent:thread:${thread.id}`,
+          title: thread.title,
+          at: thread.lastAt,
+          age: formatWaited(thread.lastAt, now),
+          detail: agentThreadDetail(thread),
+          target: { kind: 'thread', project: slug, thread: thread.id } as HomeTarget
+        })),
+      ...handoffs
+        // A handoff ready to pick up is Waiting on him; it is not also here.
+        .filter(
+          (handoff) =>
+            handoff.move === 'agent' &&
+            handoff.state !== 'superseded' &&
+            handoff.state !== 'done' &&
+            !isHandoffReady(handoff)
+        )
+        .map((handoff) => ({
+          key: `agent:handoff:${handoff.path}`,
+          title: handoff.title,
+          at: handoff.updated,
+          age: formatWaited(handoff.updated, now),
+          detail: agentHandoffDetail(handoff),
+          target: { kind: 'surface', surface: 'handoffs' } as HomeTarget
+        }))
+    ]),
+    WITH_AGENTS_LIMIT,
+    (n) => `${n} more with your agents`
+  )
 
   // --- the release ------------------------------------------------------------
   const release: HomeRelease =
@@ -304,7 +399,7 @@ export function projectHome(
     newestFirst(
       runs.map((run) => ({
         key: `request:${run.request.path}`,
-        title: run.request.title,
+        title: runTitle(run),
         ...dated(runAgeSource(run)),
         state: requestState(run),
         target: { kind: 'runner', path: run.request.path } as HomeTarget
@@ -351,16 +446,20 @@ export function projectHome(
     handoffsReadyMore
   )
 
-  // The Specs tab's own reading list and order, scoped to this project.
+  // The Specs tab's own reading list, scoped to this project. The tab groups by
+  // state; the Dash draws an age on each row, so it is newest first like every
+  // other Dash list.
   const specs = homeList(
-    specRows(snapshot, { kind: 'project', slug }, {}).map((row) => ({
-      key: `spec:${row.requestPath}`,
-      title: row.title,
-      ...dated(row.ageSource),
-      target: row.openable
-        ? ({ kind: 'runner', path: row.requestPath } as HomeTarget)
-        : ({ kind: 'surface', surface: 'specs' } as HomeTarget)
-    })),
+    newestFirst(
+      specRows(snapshot, { kind: 'project', slug }, {}).map((row) => ({
+        key: `spec:${row.requestPath}`,
+        title: row.title,
+        ...dated(row.ageSource),
+        target: row.openable
+          ? ({ kind: 'runner', path: row.requestPath } as HomeTarget)
+          : ({ kind: 'surface', surface: 'specs' } as HomeTarget)
+      }))
+    ),
     limit,
     (n) => `${n} more spec${n === 1 ? '' : 's'}`
   )
@@ -413,6 +512,8 @@ export function projectHome(
     standing,
     releaseCall,
     waiting,
+    waitingAll,
+    withAgents,
     release,
     requests,
     notes: noteRows,
@@ -428,13 +529,20 @@ export function projectHome(
  * The keyboard's reading order through the home: the release block, then the
  * wide column top to bottom, then the narrow one — the order the eye takes.
  */
-export function homeReadingOrder(model: ProjectHomeModel): string[] {
+export function homeReadingOrder(
+  model: ProjectHomeModel,
+  /** The keys the Waiting card draws, in its drawn order; defaults to the model's own list. */
+  waitingKeys?: readonly string[],
+  /** The agents card's keys, only while it is open. */
+  agentKeys: readonly string[] = []
+): string[] {
   const keys = (list: HomeList<{ key: string }>): string[] => list.shown.map((row) => row.key)
   const releaseKeys = model.release.kind === 'none' ? [] : keys(model.release.features)
   const lanes =
     model.roadmap.total > 0 ? model.roadmap.lanes.map((lane) => `lane:${lane.tier}`) : []
   const wide = [
-    ...keys(model.waiting),
+    ...(waitingKeys ?? keys(model.waiting)),
+    ...agentKeys,
     ...releaseKeys,
     ...keys(model.requests),
     ...keys(model.notes)

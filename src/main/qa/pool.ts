@@ -2,6 +2,7 @@ import { mkdir, readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { parse as parseYaml } from 'yaml'
 import { atomicWrite } from './atomicWrite'
+import { parseFeatureRequest, type FeatureRequestFields, type RequestFate } from './featureRequest'
 import { createPoolIdeaFile, patchPoolIdeaFile } from './poolIdeaFile'
 
 export type PoolTier = 'functionality' | 'quality-of-life' | 'delight'
@@ -45,6 +46,8 @@ export interface PoolIdea {
   stateAt?: string
   returnedFrom?: string
   isNew: boolean
+  /** Ticket 38: present when the idea file declares any request field. */
+  request?: FeatureRequestFields
 }
 
 export interface ProjectPool {
@@ -90,6 +93,7 @@ interface ParsedIdea {
   bodyMarkdown: string
   returnedFrom?: string
   returnedAt?: string
+  request?: FeatureRequestFields
 }
 
 const TIER_ORDER: readonly PoolTier[] = ['functionality', 'quality-of-life', 'delight']
@@ -126,6 +130,7 @@ export async function readProjectPool(root: string, project: string): Promise<Pr
         ...(sidecarState?.at ? { stateAt: sidecarState.at } : {}),
         ...(!sidecarState?.at && idea.returnedAt ? { stateAt: idea.returnedAt } : {}),
         ...(idea.returnedFrom ? { returnedFrom: idea.returnedFrom } : {}),
+        ...(idea.request ? { request: idea.request } : {}),
         isNew: isAfter(idea.added ?? idea.returnedAt, orderResult.order.seenAt)
       })
     })
@@ -296,7 +301,13 @@ export async function editProjectPoolIdea(
   root: string,
   project: string,
   id: string,
-  changes: { title?: string; bodyMarkdown?: string }
+  changes: {
+    title?: string
+    bodyMarkdown?: string
+    appendEntry?: string
+    fate?: RequestFate
+    candidate?: string | null
+  }
 ): Promise<ProjectPool> {
   const pool = await readProjectPool(root, project)
   const idea = pool.ideas.find((candidate) => candidate.id === id)
@@ -308,10 +319,21 @@ export async function editProjectPoolIdea(
   if (changes.title !== undefined && (!title || !oneLine(title))) {
     throw new Error('An idea title must be one non-empty line.')
   }
-  if (changes.title === undefined && changes.bodyMarkdown === undefined) return pool
+  if (
+    changes.title === undefined &&
+    changes.bodyMarkdown === undefined &&
+    changes.appendEntry === undefined &&
+    changes.fate === undefined &&
+    changes.candidate === undefined
+  ) {
+    return pool
+  }
   await patchPoolIdeaFile(idea.path, {
+    ...(changes.fate !== undefined ? { fate: changes.fate } : {}),
+    ...(changes.candidate !== undefined ? { candidate: changes.candidate } : {}),
     ...(title ? { title } : {}),
-    ...(changes.bodyMarkdown !== undefined ? { bodyMarkdown: changes.bodyMarkdown } : {})
+    ...(changes.bodyMarkdown !== undefined ? { bodyMarkdown: changes.bodyMarkdown } : {}),
+    ...(changes.appendEntry !== undefined ? { appendEntry: changes.appendEntry } : {})
   })
   return readProjectPool(root, project)
 }
@@ -583,6 +605,7 @@ function parseIdea(raw: string, filePath: string): ParsedIdea | undefined {
     tier,
     ...(scalar(parsed.added) ? { added: scalar(parsed.added) } : {}),
     ...(scalar(parsed.candidate) ? { candidate: scalar(parsed.candidate) } : {}),
+    ...(parseFeatureRequest(parsed) ? { request: parseFeatureRequest(parsed) } : {}),
     bodyMarkdown: raw.slice(frontmatter[0].length).trim()
   }
 }

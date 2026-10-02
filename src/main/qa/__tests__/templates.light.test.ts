@@ -3,8 +3,8 @@ import { ROOT_AGENTS_MD, ROOT_TEMPLATE_VERSION, templateVersion } from '../templ
 
 describe('root contract — light requests and reports (T9, ADR-0011)', () => {
   test('ships the current contract marker', () => {
-    expect(ROOT_TEMPLATE_VERSION).toBe(20)
-    expect(templateVersion(ROOT_AGENTS_MD)).toBe(20)
+    expect(ROOT_TEMPLATE_VERSION).toBe(23)
+    expect(templateVersion(ROOT_AGENTS_MD)).toBe(23)
   })
 
   test('states what the app does with git: pull on request, a .gitignore, never a commit', () => {

@@ -1,5 +1,5 @@
 /**
- * Every enlargement unpins (Dominik 2026-09-28, ticket 26).
+ * Every enlargement unpins.
  *
  * Invariant: a pinned window is only ever sidebar-sized. Maximising, the macOS
  * zoom (green button or a double-click on the title bar), entering full screen

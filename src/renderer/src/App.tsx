@@ -7,8 +7,9 @@ import { Inbox } from './views/Inbox'
 import { Dashboard, ThreadView } from './views/Dashboard'
 import { Specs } from './views/Specs'
 import { Releases } from './views/Releases'
-import { Roadmap } from './views/RoadmapPool'
+import { RoadmapSwitch } from './views/RoadmapSwitch'
 import { Handoffs } from './views/Handoffs'
+import { FeatureRequests } from './views/FeatureRequests'
 import { Runner } from './views/Runner'
 import { NoteEditor } from './views/NoteEditor'
 import { Settings } from './views/Settings'
@@ -91,9 +92,7 @@ function Shell(): React.JSX.Element {
 
   // Links open new windows, so windows accumulate. Electron takes the window
   // title from the document title, so naming what this window holds here is
-  // what makes the Window menu and Mission Control legible (Dominik,
-  // 2026-09-13: "app window should show the name of the project and what else
-  // is open").
+  // what makes the Window menu and Mission Control legible.
   useEffect(() => {
     document.title = windowTitle(scope, view, snapshot, presentation === 'front-page')
   }, [scope, view, snapshot, presentation])
@@ -214,6 +213,8 @@ function Shell(): React.JSX.Element {
       enabled: surfaceApplies('handoffs', scope),
       handler: () => navigate({ kind: 'handoffs' })
     },
+    // Feature requests list across projects, so it applies under All projects too.
+    'nav.requests': () => navigate({ kind: 'requests' }),
     // The home belongs to a project; under *All projects* there is none to open.
     'nav.project-home': { enabled: scope.kind === 'project', handler: openProjectHome },
     'nav.all-projects': {
@@ -261,6 +262,7 @@ function Shell(): React.JSX.Element {
                 ) : (
                   <>
                     {view.kind === 'inbox' && <Inbox />}
+                    {view.kind === 'requests' && <FeatureRequests />}
                     {(view.kind === 'specs' ||
                       view.kind === 'releases' ||
                       view.kind === 'roadmap' ||
@@ -270,7 +272,7 @@ function Shell(): React.JSX.Element {
                       <>
                         {view.kind === 'specs' && <Specs />}
                         {view.kind === 'releases' && <Releases />}
-                        {view.kind === 'roadmap' && <Roadmap />}
+                        {view.kind === 'roadmap' && <RoadmapSwitch />}
                         {view.kind === 'handoffs' && <Handoffs />}
                       </>
                     )}

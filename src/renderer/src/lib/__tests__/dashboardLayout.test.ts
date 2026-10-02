@@ -136,8 +136,11 @@ describe('the guard measures what the app actually loads', () => {
       'src/renderer/src/assets/link-arrival.css',
       'src/renderer/src/assets/fleet.css',
       'src/renderer/src/assets/project-home.css',
+      'src/renderer/src/assets/waiting-rows.css',
       'src/renderer/src/assets/markup.css',
-      'src/renderer/src/assets/get-started.css'
+      'src/renderer/src/assets/get-started.css',
+      'src/renderer/src/assets/feature-requests.css',
+      'src/renderer/src/assets/roadmap-releases.css'
     ])
   }, 60_000)
 
@@ -183,7 +186,7 @@ describe('the Dashboard keeps a usable title column at every width the app runs 
     60_000
   )
 
-  // Not a hypothetical. This is the build Dominik installed and rejected, and
+  // Not a hypothetical. This is the build the reviewer installed and rejected, and
   // it is measured so the floors above are known to be capable of failing.
   test('the shipped defect — a 252px rail inside an 860px window — fails every floor', () => {
     const defect = at(WIDE_WIDTH, true)
@@ -312,7 +315,7 @@ describe('narrow: pushed into a project', () => {
 })
 
 /**
- * Ticket 14. Dominik's screenshot of 0.21.0-alpha.2 at the 460px preset: the
+ * Ticket 14. The reviewer's screenshot of 0.21.0-alpha.2 at the 460px preset: the
  * centred app name wrapped to three lines against the build marker and the pin
  * was off the frame. The bar is one component, so it is measured at all three
  * widths the app runs at with the same assertions.

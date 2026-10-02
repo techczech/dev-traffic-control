@@ -89,8 +89,8 @@ describe('one list, two presentations, chosen by width (ticket 04)', () => {
 })
 
 describe('the expand button reaches a width that holds the rail', () => {
-  // Dominik 2026-09-23: "clicking the expand button does not actually expand
-  // the width to show the sidebar". The expanded preset must clear the threshold.
+  // Clicking the expand button must widen the window enough to show the
+  // sidebar. The expanded preset must clear the threshold.
   test('the expanded preset shows the rail', () => {
     expect(railFitsWindow(EXPANDED_WIDTH)).toBe(true)
     expect(projectListPresentation(EXPANDED_WIDTH, true)).toBe('rail')

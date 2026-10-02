@@ -16,7 +16,7 @@ describe('date vocabulary', () => {
   const now = new Date(2026, 8, 12, 12, 0, 0)
 
   test.each([
-    // Today prints the clock time (Dominik 2026-09-27).
+    // Today prints the clock time.
     [localIso(2026, 9, 12, 11, 59, 31), '11:59', 'today 11:59'],
     [localIso(2026, 9, 12, 11, 48), '11:48', 'today 11:48'],
     [localIso(2026, 9, 12, 7), '07:00', 'today 07:00'],

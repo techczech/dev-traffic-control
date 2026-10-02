@@ -330,7 +330,7 @@ export function Releases(): React.JSX.Element {
       <div
         className={`view releases-view release-project-layout release-narrow-navigation-${narrowNavigation}`}
       >
-        {/* Ticket 06, as far as Dominik asked on 2026-09-26: the window's scope
+        {/* Ticket 06, as far as the reviewer asked on 2026-09-26: the window's scope
             decides the project, so this surface draws no project list of its
             own ("they should work the same as dash and inbox"). */}
         <div className="release-project-detail">

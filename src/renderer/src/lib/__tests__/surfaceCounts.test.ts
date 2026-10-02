@@ -42,11 +42,14 @@ function snapshot(): QaSnapshot {
 
 test('inside a project each tab counts what it holds; empty reads as zero', () => {
   const counts = surfaceCounts(snapshot(), { kind: 'project', slug: 'tw' }, new Set(), new Set())
-  expect(counts).toEqual({ inbox: 0, releases: 0, roadmap: 2, handoffs: 1 })
+  expect(counts).toEqual({ inbox: 0, requests: 0, releases: 0, roadmap: 2, handoffs: 1 })
   const other = surfaceCounts(snapshot(), { kind: 'project', slug: 'rf' }, new Set(), new Set())
-  expect(other).toEqual({ inbox: 0, releases: 0, roadmap: 0, handoffs: 0 })
+  expect(other).toEqual({ inbox: 0, requests: 0, releases: 0, roadmap: 0, handoffs: 0 })
 })
 
-test('under All projects only the Inbox is counted', () => {
-  expect(surfaceCounts(snapshot(), { kind: 'all' }, new Set(), new Set())).toEqual({ inbox: 0 })
+test('under All projects the Inbox and Feature requests are counted', () => {
+  expect(surfaceCounts(snapshot(), { kind: 'all' }, new Set(), new Set())).toEqual({
+    inbox: 0,
+    requests: 0
+  })
 })

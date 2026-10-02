@@ -9,6 +9,7 @@ export type CommandSection =
   | 'Specs'
   | 'Releases'
   | 'Roadmap'
+  | 'Feature requests'
   | 'Note'
   | 'Handoffs'
   | 'Settings'
@@ -231,6 +232,12 @@ export const COMMANDS = [
     section: 'Navigate',
     defaultBinding: 'Mod+6'
   }),
+  command({
+    id: 'nav.requests',
+    title: 'Go to Feature requests',
+    section: 'Navigate',
+    defaultBinding: 'Mod+7'
+  }),
   // Overview follows scope; this chord selects it inside a project.
   command({
     id: 'nav.project-home',
@@ -257,7 +264,7 @@ export const COMMANDS = [
     section: 'Navigate',
     defaultBinding: 'ArrowDown',
     alternateBindings: ['J'],
-    hintContexts: ['dashboard', 'inbox', 'handoffs', 'specs', 'releases', 'roadmap']
+    hintContexts: ['dashboard', 'inbox', 'handoffs', 'specs', 'releases', 'roadmap', 'requests']
   }),
   command({
     id: 'nav.move-up',
@@ -266,7 +273,7 @@ export const COMMANDS = [
     section: 'Navigate',
     defaultBinding: 'ArrowUp',
     alternateBindings: ['K'],
-    hintContexts: ['dashboard', 'inbox', 'handoffs', 'specs', 'releases', 'roadmap']
+    hintContexts: ['dashboard', 'inbox', 'handoffs', 'specs', 'releases', 'roadmap', 'requests']
   }),
   command({
     id: 'nav.open-selection',
@@ -275,7 +282,7 @@ export const COMMANDS = [
     section: 'Navigate',
     defaultBinding: 'Enter',
     contextual: true,
-    hintContexts: ['dashboard', 'inbox', 'handoffs', 'specs']
+    hintContexts: ['dashboard', 'inbox', 'handoffs', 'specs', 'requests']
   }),
   command({
     id: 'nav.open-project',
@@ -387,6 +394,15 @@ export const COMMANDS = [
     title: 'New note',
     section: 'Navigate',
     defaultBinding: 'N',
+    hintContexts: ['dashboard']
+  }),
+  command({
+    id: 'nav.toggle-waiting-layout',
+    title: 'Waiting on you: group or sort',
+    shortTitle: 'Arrange',
+    section: 'Navigate',
+    defaultBinding: 'W',
+    contextual: true,
     hintContexts: ['dashboard']
   }),
   command({
@@ -739,6 +755,49 @@ export const COMMANDS = [
     section: 'Roadmap',
     defaultBinding: 'N',
     hintContexts: ['roadmap']
+  }),
+
+  command({
+    id: 'roadmap.toggle-layout',
+    title: 'Switch the Roadmap between Columns, List and Tiers',
+    shortTitle: 'Layout',
+    section: 'Roadmap',
+    defaultBinding: 'L',
+    hintContexts: ['roadmap']
+  }),
+  command({
+    id: 'roadmap.move-to',
+    title: 'Move the highlighted feature to another release',
+    shortTitle: 'Move to…',
+    section: 'Roadmap',
+    defaultBinding: 'M',
+    contextual: true,
+    hintContexts: ['roadmap']
+  }),
+
+  command({
+    id: 'requests.review-all',
+    title: 'Copy the prompt that asks an agent to review all requests',
+    shortTitle: 'Review all',
+    section: 'Feature requests',
+    defaultBinding: 'R',
+    hintContexts: ['requests']
+  }),
+  command({
+    id: 'requests.toggle-finished',
+    title: 'Fold or unfold the Finished feature requests',
+    shortTitle: 'Finished',
+    section: 'Feature requests',
+    defaultBinding: 'F',
+    hintContexts: ['requests']
+  }),
+  command({
+    id: 'requests.show-no-plan',
+    title: 'Show only the feature requests without a plan',
+    shortTitle: 'No plan',
+    section: 'Feature requests',
+    defaultBinding: 'N',
+    hintContexts: ['requests']
   }),
 
   command({
@@ -1415,6 +1474,7 @@ export type SurfaceCommandScope =
   | 'releases'
   | 'release-shipping'
   | 'roadmap'
+  | 'requests'
   | 'handoffs'
   | 'verdict-list'
   | 'markup'
@@ -1442,6 +1502,7 @@ const GLOBAL_COMMAND_IDS: readonly CommandId[] = [
   'nav.releases',
   'nav.roadmap',
   'nav.handoffs',
+  'nav.requests',
   'nav.project-home',
   'nav.copy-project-link',
   'nav.all-projects'
@@ -1454,7 +1515,8 @@ export const SURFACE_COMMANDS: Record<SurfaceCommandScope, readonly CommandId[]>
     'nav.move-down',
     'nav.move-up',
     'nav.open-selection',
-    'nav.new-note'
+    'nav.new-note',
+    'nav.toggle-waiting-layout'
   ],
   inbox: [
     ...GLOBAL_COMMAND_IDS,
@@ -1535,7 +1597,18 @@ export const SURFACE_COMMANDS: Record<SurfaceCommandScope, readonly CommandId[]>
     'roadmap.toggle-delight',
     'roadmap.choose-sheet-option',
     'roadmap.sort-lane',
-    'roadmap.add-idea'
+    'roadmap.add-idea',
+    'roadmap.toggle-layout',
+    'roadmap.move-to'
+  ],
+  requests: [
+    ...GLOBAL_COMMAND_IDS,
+    'nav.move-down',
+    'nav.move-up',
+    'nav.open-selection',
+    'requests.toggle-finished',
+    'requests.show-no-plan',
+    'requests.review-all'
   ],
   handoffs: [
     ...GLOBAL_COMMAND_IDS,

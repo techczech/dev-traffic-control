@@ -33,7 +33,7 @@ function record(
 }
 
 describe('releaseBoardRows', () => {
-  test('puts apps needing Dominik first and carries all five state words', () => {
+  test('puts apps needing the reviewer first and carries all five state words', () => {
     const rows = releaseBoardRows([
       record('steady-app', [
         {

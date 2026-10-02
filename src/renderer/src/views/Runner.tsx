@@ -1209,7 +1209,7 @@ function RunnerCard({
   const reqItem = request.items.find((ri) => ri.id === item.id)
   const removed = !!item.removed
   const itemTicks = ticks[item.id] ?? EMPTY_TICKS
-  // Flagging is available in ANY verdict state — Dominik flags the failing line
+  // Flagging is available in ANY verdict state — the reviewer flags the failing line
   // first, then decides the verdict (Gate 4a feedback, ADR-0004 amendment 3).
   const flaggable = !readOnly && !removed
   const mode = item.status === 'fail' ? 'mode-red' : 'mode-amber'

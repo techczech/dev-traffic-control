@@ -1,5 +1,9 @@
 import { expect, test } from 'vitest'
-import { bigLinkBounds, linkWindowShape } from '../linkWindow'
+import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { bigLinkBounds, linkWindowShape, slotForLinkShape } from '../linkWindow'
+import { landingForArrival, landingRecords, resolveDeepLinkArrival } from '../deepLinkResolve'
 import { NARROW_WIDTH, WIDE_WIDTH } from '../windowLayout'
 
 const runs = [
@@ -97,4 +101,62 @@ test('a sidebar cascaded from a sidebar keeps its place and its overlap guard', 
   ).toEqual({ layout: { ...layout, pinned: false }, bounds, preventPinnedOverlap: true })
   // No source window: the narrow pinned layout, default placement.
   expect(sidebarLinkState({ layout: { ...layout, widthPreset: 'wide' } }, wa)).toEqual({ layout })
+})
+
+// Ticket 41: a request link must open in the docked sidebar, not a wide
+// window. The same request, spelled three ways, must land the same way.
+test('the shorthand, the open link without .md and the canonical link land identically', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'dtc-links-'))
+  const name = '2026-01-15-example-app-0.4.0-preview.2-check'
+  await mkdir(join(root, 'example-app', `${name}.shots`), { recursive: true })
+  await writeFile(join(root, 'example-app', `${name}.md`), '---\nmode: light\n---\nbody\n')
+  const scanned = [
+    { request: { path: join(root, 'example-app', `${name}.md`), mode: 'light' as const } }
+  ]
+  const spellings = [
+    `dtc://example-app/${name}`,
+    `dtc://example-app/${name}.md`,
+    `dtc://open/example-app/${name}`,
+    `dtc://open/example-app/${name}.md`
+  ]
+  const results: Array<Record<string, unknown>> = []
+  for (const url of spellings) {
+    const arrival = await resolveDeepLinkArrival(url, { recordRoot: root })
+    const records = landingRecords(null)
+    const landing = landingForArrival(arrival, url, false, {
+      ...records,
+      recordRoot: root,
+      runPaths: scanned.map((run) => run.request.path)
+    })
+    results.push({
+      arrival: arrival.kind === 'record' ? [arrival.relative, arrival.path] : arrival,
+      scanned: linkWindowShape(arrival, scanned, root),
+      unscanned: linkWindowShape(arrival, [], root, 'light'),
+      noHeader: linkWindowShape(arrival, [], root),
+      view: landing.kind === 'opened' ? landing.view : landing.kind
+    })
+  }
+  for (const result of results) expect(result).toEqual(results[3])
+  expect(results[0].scanned).toBe('sidebar')
+  expect(results[0].view).toEqual({ kind: 'runner', path: join(root, 'example-app', `${name}.md`) })
+})
+
+// A link into a reopened or cold-launch window lands in the last window's slot.
+test('a slot saved wide opens a request as the pinned sidebar, and a review as the big window', () => {
+  const wa = { x: 0, y: 25, width: 1728, height: 1080 }
+  const saved = {
+    layout: { pinned: false, widthPreset: 'wide' as const, windowMode: 'docked' as const },
+    bounds: { x: 300, y: 100, width: WIDE_WIDTH, height: 700 }
+  }
+  const sidebar = slotForLinkShape(saved, 'sidebar', wa)
+  expect(sidebar.layout).toEqual({ pinned: true, widthPreset: 'narrow', windowMode: 'free' })
+  expect(sidebar.bounds?.width).toBe(NARROW_WIDTH)
+  expect(sidebar.bounds!.x + sidebar.bounds!.width).toBe(300 + WIDE_WIDTH)
+  const big = slotForLinkShape(
+    { layout: { pinned: true, widthPreset: 'narrow', windowMode: 'free' } },
+    'big',
+    wa
+  )
+  expect(big.layout).toEqual({ pinned: false, widthPreset: 'wide', windowMode: 'free' })
+  expect(big.bounds).toEqual(bigLinkBounds(wa))
 })

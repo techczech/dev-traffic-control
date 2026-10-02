@@ -39,14 +39,14 @@ type DockSettings = Pick<Settings, 'pinned' | 'widthPreset' | 'windowMode'>
 /**
  * Docking makes the window the narrow sidebar and keeps it docked. It never
  * touches the pin: the pin is whether it stays on top, the dock is where it
- * goes (Dominik 2026-09-28, ticket 27).
+ * goes.
  */
 export function settingsForDock(current: DockSettings): DockSettings {
   return { pinned: current.pinned, widthPreset: 'narrow', windowMode: 'docked' }
 }
 
 /**
- * Only the narrow sidebar is ever pinned (Dominik, 2026-09-23): expanding
+ * Only the narrow sidebar is ever pinned: expanding
  * unpins the window, and narrowing it again pins it back.
  */
 export function pinnedForPreset(preset: Settings['widthPreset']): boolean {

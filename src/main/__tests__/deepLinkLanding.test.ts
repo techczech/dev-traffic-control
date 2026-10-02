@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 import { landingForArrival, type LandingRecords } from '../deepLinkResolve'
 
-// Dominik 2026-09-26: links "don't open on the thing but in the dash". A
+// Links open on the thing, not in the dash. A
 // release, roadmap idea, handoff or thread entry now opens on itself.
 const records: LandingRecords = {
   recordRoot: '/r',

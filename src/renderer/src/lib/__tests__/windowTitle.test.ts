@@ -4,9 +4,8 @@ import type { QaSnapshot } from '../../../../shared/ipc'
 import type { View } from '../../state/app'
 
 /**
- * Dominik, 2026-09-13, on the first build where links opened windows: "app
- * window should show the name of the project and what else is open e.g.
- * DevTrafficControl - Link - Feedback". Every window was titled "Dev Traffic
+ * An app window shows the name of the project and what else is open, e.g.
+ * "DevTrafficControl - Link - Feedback". Every window was titled "Dev Traffic
  * Control", so the Window menu and Mission Control could not tell them apart —
  * which matters precisely because links make windows accumulate.
  */

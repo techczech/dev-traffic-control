@@ -5,7 +5,7 @@ import type { WindowLayoutPreferences } from './viewState'
 import { NARROW_WIDTH, WIDE_WIDTH, fitToWorkArea, type WindowBounds } from './windowLayout'
 
 /**
- * Which window a dtc:// link opens (Dominik, 2026-09-26): "when commenting on
+ * Which window a dtc:// link opens: "when commenting on
  * design or roadmap big, when testing a new feature - sidebar".
  *
  * - A test request (light or detailed) opens as his usual sidebar: the narrow,
@@ -28,13 +28,12 @@ export function linkWindowShape(
     return arrival.kind === 'project' || arrival.kind === 'thread' ? 'big' : 'sidebar'
   // Match by the record's canonical identity, the path relative to the record
   // root, as the landing does. Comparing absolute paths missed the request in
-  // alpha.19, so a test request opened big (Dominik's check, 2026-09-26).
+  // alpha.19, so a test request opened big.
   const run = runs.find(
     (candidate) => requestIdentity(recordRoot, candidate.request.path) === arrival.relative
   )
   if (run) return run.request.mode === 'doc-review' ? 'big' : 'sidebar'
-  // A request filed moments ago may not be in the scan yet (Dominik
-  // 2026-09-27: a fresh test request opened big). A file directly in the
+  // A request filed moments ago may not be in the scan yet. A file directly in the
   // project folder, or one round folder down, is a request; its own header
   // says whether it is a review.
   const within = arrival.relative.split('/').slice(1)
@@ -78,7 +77,7 @@ interface NewWindowState {
  *
  * A new window copies the focused window's layout and bounds. When that is a
  * big link window, the copy is big too, and his "always pin" setting then pins
- * it: big AND pinned (Dominik 2026-09-28, alpha.24). The sidebar shape is
+ * it: big AND pinned. The sidebar shape is
  * therefore imposed here, not inherited: narrow width, free placement, pinned,
  * kept at the right edge of the footprint the cascade chose, height kept, on
  * screen. A window that already cascades as a narrow strip keeps its place and
@@ -99,4 +98,27 @@ export function sidebarLinkState(state: NewWindowState, workArea: WindowBounds):
     workArea
   )
   return { layout: { ...layout, pinned: true }, bounds }
+}
+
+/**
+ * A saved window slot given the link's shape. A link that opens in a reopened
+ * window (every window had been closed) or in the cold-launch window lands in a
+ * slot holding the last window's layout and bounds, so a request opened wide
+ * whenever the last window he closed was wide, whatever spelling the link used
+ * (ticket 41). The shape is imposed here exactly as for a new window: the
+ * sidebar is narrow, pinned and free; the big window is wide, unpinned and free.
+ */
+export function slotForLinkShape(
+  state: { layout: WindowLayoutPreferences; bounds?: WindowBounds },
+  shape: LinkWindowShape,
+  workArea: WindowBounds
+): { layout: WindowLayoutPreferences; bounds?: WindowBounds } {
+  if (shape === 'big') {
+    return {
+      layout: { ...state.layout, widthPreset: 'wide', windowMode: 'free', pinned: false },
+      bounds: bigLinkBounds(workArea)
+    }
+  }
+  const next = sidebarLinkState({ layout: state.layout, bounds: state.bounds }, workArea)
+  return { layout: next.layout, ...(next.bounds ? { bounds: next.bounds } : {}) }
 }

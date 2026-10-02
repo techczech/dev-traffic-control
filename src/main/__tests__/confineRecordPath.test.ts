@@ -8,7 +8,7 @@ import { confineRecordPath } from '../requestPath'
  * The second gate a `dtc://` link passes, and the one that decides between the
  * two states the design holds apart: confined-but-absent is rootsync being
  * behind, refused is a link turned away. A test that collapsed them would let
- * the app teach Dominik to ignore refusals.
+ * the app teach the reviewer to ignore refusals.
  */
 async function fixture(): Promise<{ root: string; parent: string }> {
   const parent = await mkdtemp(path.join(tmpdir(), 'dtc-record-path-'))
@@ -91,13 +91,10 @@ describe('a path that is refused', () => {
 
   test('refuses a symlink that leaves the root', async () => {
     const { root, parent } = await fixture()
-    await symlink(
-      path.join(parent, 'secret.md'),
-      path.join(root, 'wordforge-desktop', 'escape.md')
-    )
-    await expect(
-      confineRecordPath(root, 'wordforge-desktop/escape.md')
-    ).resolves.toEqual({ kind: 'refused' })
+    await symlink(path.join(parent, 'secret.md'), path.join(root, 'wordforge-desktop', 'escape.md'))
+    await expect(confineRecordPath(root, 'wordforge-desktop/escape.md')).resolves.toEqual({
+      kind: 'refused'
+    })
   })
 
   test('refuses a symlinked FOLDER that leaves the root, even when the leaf does not exist', async () => {

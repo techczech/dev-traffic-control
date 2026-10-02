@@ -104,8 +104,7 @@
   color: var(--status-progress-ink);
 }
 /* Rows are white on the amber card, one clear line apart, so each reads as
-   its own clickable thing (Dominik 2026-09-25: "it's not clear these are
-   clickable options"). */
+   its own clickable thing. */
 .phome .phome-card.pull .phome-r {
   background: #fff;
   border-bottom-color: var(--status-progress-edge);
@@ -130,8 +129,7 @@
   height: 16px;
 }
 /* Each waiting question is a white card with a thick coloured edge, the
-   colour cycling per question (Dominik 2026-09-23, drawing 2: "use actual
-   different colours"). The edge marks the item without tinting the words. */
+   colour cycling per question. The edge marks the item without tinting the words. */
 .phome .phome-hero {
   --hero-edge: #c99441;
   position: relative;
@@ -277,7 +275,7 @@
   background: #fff;
 }
 
-/* ---- the three roadmap lanes, in his words ---- */
+/* ---- the three roadmap lanes, in the reviewer's words ---- */
 .phome .phome-lane {
   display: flex;
   width: 100%;
@@ -789,4 +787,136 @@
   margin: 14px 0 0;
   font-size: 12px;
   color: var(--muted);
+}
+
+/* The Waiting card's arrangement toggle. */
+.phome .phome-card > header .w-toggle {
+  display: inline-flex;
+  margin-left: 10px;
+  border: 1px solid var(--status-progress-edge);
+  border-radius: 7px;
+  overflow: hidden;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.phome .phome-card > header .w-toggle button {
+  padding: 3px 9px;
+  border: 0;
+  background: #fff9ee;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--status-progress-ink);
+  cursor: pointer;
+}
+.phome .phome-card > header .w-toggle button + button {
+  border-left: 1px solid var(--status-progress-edge);
+}
+.phome .phome-card > header .w-toggle button.on {
+  background: var(--status-progress-ink);
+  color: #fff;
+}
+
+/* With your agents: grey, dashed, closed until opened. Nothing in it has a button. */
+.phome .phome-agents {
+  background: var(--paper-2);
+  border: 1px dashed var(--line-2);
+  border-radius: 7px;
+  overflow: hidden;
+}
+.phome .phome-agents > .hd {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: var(--muted);
+  cursor: pointer;
+}
+.phome .phome-agents > .hd .ic {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.phome .phome-agents > .hd .lbl {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.phome .phome-agents > .hd .sum {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+}
+.phome .phome-agents > .hd .sum b {
+  color: #4b5157;
+  font-weight: 650;
+}
+.phome .phome-agents > .hd .show {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.phome .phome-agents > .hd .show .ic {
+  width: 14px;
+  height: 14px;
+}
+.phome .phome-agents .rows {
+  display: flex;
+  flex-direction: column;
+}
+.phome .phome-agents .ar {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.55);
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.phome .phome-agents .ar:hover,
+.phome .phome-agents .ar.focused {
+  background: #fff;
+}
+.phome .phome-agents .ar.more {
+  cursor: default;
+  font-size: 13px;
+  color: var(--muted);
+}
+.phome .phome-agents .ar .t {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #3c4148;
+}
+.phome .phome-agents .ar .s {
+  display: block;
+  margin-top: 2px;
+  font-size: 13.5px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+.phome .phome-agents .ar .s b {
+  font-weight: 650;
+  color: #4b5157;
+}
+@media (max-width: 760px) {
+  .phome .phome-agents > .hd .sum {
+    flex-basis: 100%;
+    order: 3;
+  }
 }

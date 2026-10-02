@@ -52,7 +52,14 @@ import { createWillQuitHandler, createWindowAllClosedHandler } from './quitFlow'
 import { armingFor, writeArming } from './qa/arming'
 import { confineArchiveOld } from './archiveOld'
 import { createHandoffHandlers } from './handoffIpc'
-import { bigLinkBounds, linkWindowShape, modeFromFrontmatter, sidebarLinkState } from './linkWindow'
+import {
+  bigLinkBounds,
+  linkWindowShape,
+  modeFromFrontmatter,
+  sidebarLinkState,
+  slotForLinkShape,
+  type LinkWindowShape
+} from './linkWindow'
 import { closeSync, openSync, readSync } from 'node:fs'
 import type { RequestMode } from './qa/types'
 import { hostname } from 'node:os'
@@ -82,9 +89,12 @@ import {
   type WindowBounds
 } from './windowLayout'
 import { watchEnlargementUnpins, type EnlargementWatch } from './enlargeUnpins'
+import { guardPinInvariant, LinkLift, mayBePinned, TemporaryPin } from './pinInvariant'
 import {
-  defaultDockPlace,
   dockBounds,
+  dockClickStep,
+  type DockCycle,
+  type RememberedDockPlace,
   dockMenuState,
   isDockPlaceId,
   resolveDockPlace,
@@ -180,9 +190,15 @@ function defaultWindowLayout(): WindowLayoutPreferences {
   }
 }
 
+// Each window's temporary pin: a pin made on a wide window (pinInvariant.ts).
+// Never persisted; the layout keeps recording it as unpinned.
+const temporaryPins = new WeakMap<BrowserWindow, TemporaryPin>()
+
 function settingsForWindow(win: BrowserWindow | null): Settings {
   const layout = windowManager?.stateFor(win)?.layout
-  return layout ? { ...store.get(), ...layout } : store.get()
+  const settings = layout ? { ...store.get(), ...layout } : store.get()
+  // The pin control shows a temporary pin as pinned.
+  return win && temporaryPins.get(win)?.active ? { ...settings, pinned: true } : settings
 }
 
 // Each window's enlargement watcher, so main can mark its own moves (ticket 27).
@@ -191,12 +207,15 @@ const enlargementWatches = new WeakMap<BrowserWindow, EnlargementWatch>()
 /**
  * Bounds main sets itself — docking and the docked re-snap. The enlargement
  * watcher is told first, so the move never counts as his enlargement and
- * never changes the pin (ticket 26's rule stays for his own resizes).
+ * never changes the pin (ticket 26's rule stays for the reviewer's own resizes).
  */
 function setBoundsByMain(win: BrowserWindow, bounds: WindowBounds): void {
   enlargementWatches.get(win)?.expectProgrammaticResize(bounds.width)
   win.setBounds(bounds)
 }
+
+// Each window's run of repeated Dock clicks; any other window action ends it.
+const dockCycles = new WeakMap<BrowserWindow, DockCycle>()
 
 /** The edge the Dock button last used; the right edge before he has ever docked. */
 function lastDockEdge(): 'left' | 'right' {
@@ -228,10 +247,24 @@ function dockDisplays(): DockDisplay[] {
 function dockWindow(win: BrowserWindow, place: DockPlaceId | 'last'): void {
   const displays = dockDisplays()
   const currentId = screen.getDisplayMatching(win.getBounds()).id
-  const target =
-    place === 'last'
-      ? (viewStateStore.getDockPlace() ?? defaultDockPlace(currentId))
-      : resolveDockPlace(place, displays, currentId)
+  let target: RememberedDockPlace
+  if (place === 'last') {
+    // The main part of the button: repeated clicks within about 4 seconds step
+    // through the four places (ticket 41); otherwise the last-used place.
+    const step = dockClickStep(
+      dockCycles.get(win) ?? null,
+      Date.now(),
+      viewStateStore.getDockPlace(),
+      displays,
+      currentId
+    )
+    target = step.target
+    dockCycles.set(win, step.cycle)
+  } else {
+    // A place picked from the menu is a fresh start for the next plain click.
+    target = resolveDockPlace(place, displays, currentId)
+    dockCycles.delete(win)
+  }
   const { bounds, displayId } = dockBounds(target, displays, currentId, NARROW_WIDTH)
   viewStateStore.setDockPlace({ edge: target.edge, displayId })
   const current = windowManager.stateFor(win)?.layout ?? defaultWindowLayout()
@@ -328,17 +361,25 @@ async function authoritativeRequestPath(suppliedPath: string): Promise<string> {
  * enlargement all end here, so the level, the persisted layout and the pin
  * control in that window's renderer never disagree.
  */
-function applyPinned(win: BrowserWindow, value: boolean): void {
-  win.setAlwaysOnTop(value, 'floating')
+function applyPinned(win: BrowserWindow, requested: boolean): void {
+  // A pin on a wide window is temporary (pinInvariant.ts): on top and shown
+  // pinned, but the saved layout says unpinned, and crossing the sidebar width
+  // clears it.
+  const temporary = requested && !mayBePinned(win.getBounds().width, NARROW_WIDTH)
+  const pin = temporaryPins.get(win)
+  if (pin) pin.active = temporary
+  win.setAlwaysOnTop(requested, 'floating')
   const current = windowManager.stateFor(win)?.layout ?? defaultWindowLayout()
-  windowManager.setLayout(win, { ...current, pinned: value })
+  windowManager.setLayout(win, { ...current, pinned: requested && !temporary })
   if (!win.webContents.isDestroyed()) {
     win.webContents.send(IPC.windowSettingsChanged, settingsForWindow(win))
   }
 }
 
 function isWindowPinned(win: BrowserWindow): boolean {
-  return windowManager.stateFor(win)?.layout.pinned === true
+  return (
+    windowManager.stateFor(win)?.layout.pinned === true || temporaryPins.get(win)?.active === true
+  )
 }
 
 /**
@@ -351,17 +392,17 @@ function createWindow(
   bringForward = false
 ): void {
   // Narrow-first habitat: a pinned strip beside the app under test (ADR-0004).
-  const settings = store.get()
-  const startPinned = preventPinnedOverlap
-    ? false
-    : settings.pinBehaviour === 'always'
-      ? true
-      : slot.layout.pinned
+  // Sidebar = pinned (ticket 41): a sidebar-width window starts pinned and a
+  // wide one does not, whatever pin the slot saved. The one exception is the
+  // overlap guard for a new window exactly over its source.
+  const wantsPin = preventPinnedOverlap ? false : true
   const targetWorkArea =
     slot.bounds && validBounds(slot.bounds)
       ? screen.getDisplayNearestPoint({ x: slot.bounds.x, y: slot.bounds.y }).workArea
       : screen.getPrimaryDisplay().workArea
   const geometry = windowGeometryForCreation(slot.bounds, targetWorkArea)
+  // A saved pin never carries a wide window on top (pinInvariant.ts).
+  const startPinned = wantsPin && mayBePinned(geometry.bounds.width, NARROW_WIDTH)
   if ('x' in geometry.bounds) viewStateStore.setWindowBounds(slot.slot, geometry.bounds)
   const win = new BrowserWindow({
     ...geometry.bounds,
@@ -378,6 +419,9 @@ function createWindow(
     }
   })
   windowManager.register(win, slot.slot)
+  // His own move or resize, like any other window action, ends a Dock click run.
+  win.on('will-move', () => dockCycles.delete(win))
+  win.on('will-resize', () => dockCycles.delete(win))
   win.on('move', () =>
     reviseWindowMinimums(win, (bounds) => screen.getDisplayNearestPoint(bounds).workArea)
   )
@@ -395,6 +439,20 @@ function createWindow(
     })
   )
 
+  // The invariant, whatever route made the window wide: restored bounds,
+  // un-docking, a saved pin, a lift that outlived its welcome.
+  const lift = new LinkLift()
+  const temporary = new TemporaryPin()
+  temporaryPins.set(win, temporary)
+  const pinGuard = guardPinInvariant(win, {
+    sidebarWidth: NARROW_WIDTH,
+    lift,
+    temporary,
+    isPinned: () => isWindowPinned(win),
+    unpin: () => applyPinned(win, false),
+    pin: () => applyPinned(win, true)
+  })
+
   // A window closed before its renderer ever asked takes its link with it;
   // nothing must be able to reappear in a later window that reuses the slot.
   win.on('closed', () => deepLinks.forget(slot.slot))
@@ -403,7 +461,10 @@ function createWindow(
   configureWindowVisibility(
     win,
     hiddenTestMode,
-    () => applyInitialLayout(win),
+    () => {
+      applyInitialLayout(win)
+      pinGuard.settle()
+    },
     bringForward
       ? () =>
           bringWindowForward(win, {
@@ -411,6 +472,8 @@ function createWindow(
             isPinned: () => isWindowPinned(win),
             pinnedPeerExists: () =>
               windowManager.liveWindows().some((peer) => peer !== win && isWindowPinned(peer)),
+            lift,
+            watchInteraction: (listener) => watchFirstTouch(win, listener),
             focusApp: process.platform === 'darwin' ? () => app.focus({ steal: true }) : undefined
           })
       : undefined
@@ -425,6 +488,32 @@ function createWindow(
     win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     win.loadFile(join(__dirname, '../renderer/index.html'))
+  }
+}
+
+/** Input that counts as touching a window: a click, a key, a scroll, a tap, a drag. */
+const TOUCH_INPUT = new Set(['mouseDown', 'mouseWheel', 'touchStart', 'gestureTap', 'keyDown'])
+
+/**
+ * Calls `listener` the first time he touches the window — a click, a key, or
+ * moving or resizing it by hand (`will-move` and `will-resize` fire for the reviewer's own
+ * moves, never for main's). Returns the function that stops listening.
+ */
+function watchFirstTouch(win: BrowserWindow, listener: () => void): () => void {
+  const contents = win.webContents
+  const onInput = (_event: unknown, input: { type: string }): void => {
+    if (TOUCH_INPUT.has(input.type)) listener()
+  }
+  contents.on('before-input-event', onInput)
+  contents.on('input-event', onInput)
+  win.on('will-move', listener)
+  win.on('will-resize', listener)
+  return () => {
+    if (win.isDestroyed()) return
+    contents.off('before-input-event', onInput)
+    contents.off('input-event', onInput)
+    win.off('will-move', listener)
+    win.off('will-resize', listener)
   }
 }
 
@@ -469,10 +558,36 @@ function deepLinkLanding(held: HeldDeepLink): DeepLinkLanding {
  * and would yank the whole fleet onto one record, so it is deliberately not
  * used here.
  */
+/** The shape the link's window takes: a request is the sidebar, anything read is big. */
+function shapeForLink(held: HeldDeepLink): LinkWindowShape {
+  return linkWindowShape(
+    held.arrival,
+    service.snapshot()?.runs ?? [],
+    store.get().qaRepoPath,
+    fallbackModeFor(held.arrival)
+  )
+}
+
+/**
+ * A saved slot (the reopened window, the cold-launch window) given the shape
+ * its link asks for, saved before the window is built. Without it the link
+ * opened in whatever the last window was, wide or narrow (ticket 41).
+ */
+function slotShapedForLink(slot: PersistedWindowState, held: HeldDeepLink): PersistedWindowState {
+  const workArea =
+    slot.bounds && validBounds(slot.bounds)
+      ? screen.getDisplayNearestPoint({ x: slot.bounds.x, y: slot.bounds.y }).workArea
+      : screen.getPrimaryDisplay().workArea
+  const shaped = slotForLinkShape(slot, shapeForLink(held), workArea)
+  viewStateStore.setWindowLayout(slot.slot, shaped.layout)
+  if (shaped.bounds) viewStateStore.setWindowBounds(slot.slot, shaped.bounds)
+  return viewStateStore.getWindow(slot.slot) ?? slot
+}
+
 function openWindowForDeepLink(held: HeldDeepLink): void {
   const scope = scopeForArrival(held.arrival)
   if (deepLinkRoute(windowManager.liveWindows().length) === 'reopened-window') {
-    const reopened = windowManager.reopenSlot(defaultWindowLayout())
+    const reopened = slotShapedForLink(windowManager.reopenSlot(defaultWindowLayout()), held)
     viewStateStore.setWindowScope(reopened.slot, scope)
     deepLinks.holdForSlot(reopened.slot, held)
     createWindow(reopened, false, true)
@@ -483,15 +598,8 @@ function openWindowForDeepLink(held: HeldDeepLink): void {
     ? screen.getDisplayNearestPoint(sourceWindow.getBounds()).workArea
     : screen.getPrimaryDisplay().workArea
   // Design, roadmap and anything read opens big and unpinned; a test request
-  // opens as the usual pinned sidebar (Dominik 2026-09-26, linkWindow.ts).
-  if (
-    linkWindowShape(
-      held.arrival,
-      service.snapshot()?.runs ?? [],
-      store.get().qaRepoPath,
-      fallbackModeFor(held.arrival)
-    ) === 'big'
-  ) {
+  // opens as the usual pinned sidebar.
+  if (shapeForLink(held) === 'big') {
     const layout = {
       ...defaultWindowLayout(),
       widthPreset: 'wide' as const,
@@ -620,7 +728,7 @@ function registerIpc(): void {
     const landing = deepLinkLanding(held)
     // A record written moments before its link was clicked may not be in the
     // scan yet, and would land on its project instead of on itself. One fresh
-    // scan settles it (Dominik 2026-09-27).
+    // scan settles it.
     if (
       held.arrival.kind === 'record' &&
       landing.kind === 'opened' &&
@@ -726,7 +834,10 @@ function registerIpc(): void {
   )
   ipcMain.handle(IPC.setPinned, (e, value: boolean): Settings => {
     const win = BrowserWindow.fromWebContents(e.sender)
-    if (win) applyPinned(win, value)
+    if (win) {
+      dockCycles.delete(win)
+      applyPinned(win, value)
+    }
     return settingsForWindow(win)
   })
   ipcMain.handle(IPC.resetWindowPosition, (event): Settings => {
@@ -742,12 +853,18 @@ function registerIpc(): void {
   ipcMain.handle(IPC.setWidthPreset, (e, preset: Settings['widthPreset']): Settings => {
     const win = BrowserWindow.fromWebContents(e.sender)
     if (win) {
+      dockCycles.delete(win)
       const current = windowManager.stateFor(win)?.layout ?? defaultWindowLayout()
-      const pinned = pinnedForPreset(preset)
-      windowManager.setLayout(win, { ...current, widthPreset: preset, pinned })
-      win.setAlwaysOnTop(pinned, 'floating')
+      // Resize first, then pin: a resize event on the way must not see the new
+      // pin on a still-wide window (pinInvariant.ts would unpin it).
       if (current.windowMode === 'docked') snapDocked(win, preset)
       else applyWidth(win, preset)
+      const pinned = pinnedForPreset(preset)
+      // The preset sets the pin outright; a temporary pin does not outlive it.
+      const temporary = temporaryPins.get(win)
+      if (temporary) temporary.active = false
+      windowManager.setLayout(win, { ...current, widthPreset: preset, pinned })
+      win.setAlwaysOnTop(pinned, 'floating')
     }
     return settingsForWindow(win)
   })
@@ -756,6 +873,7 @@ function registerIpc(): void {
     const current = win
       ? (windowManager.stateFor(win)?.layout ?? defaultWindowLayout())
       : defaultWindowLayout()
+    if (win) dockCycles.delete(win)
     if (mode === 'docked') {
       // Docking never changes the pin (ticket 27).
       const docked = settingsForDock(current)
@@ -905,7 +1023,10 @@ function registerIpc(): void {
           : {
               pool: await editProjectPoolIdea(root, input.project, input.id, {
                 ...(input.title !== undefined ? { title: input.title } : {}),
-                ...(input.bodyMarkdown !== undefined ? { bodyMarkdown: input.bodyMarkdown } : {})
+                ...(input.bodyMarkdown !== undefined ? { bodyMarkdown: input.bodyMarkdown } : {}),
+                ...(input.appendEntry !== undefined ? { appendEntry: input.appendEntry } : {}),
+                ...(input.fate !== undefined ? { fate: input.fate } : {}),
+                ...(input.candidate !== undefined ? { candidate: input.candidate } : {})
               }),
               id: input.id
             }
@@ -1320,11 +1441,10 @@ if (!app.requestSingleInstanceLock()) {
     if (coldLaunchUrl && startupSlots[0]) {
       const arrival = await deepLinkArrival(coldLaunchUrl)
       viewStateStore.setWindowScope(startupSlots[0].slot, scopeForArrival(arrival))
-      deepLinks.holdForSlot(startupSlots[0].slot, {
-        url: coldLaunchUrl,
-        arrival,
-        coldLaunch: true
-      })
+      const coldHeld: HeldDeepLink = { url: coldLaunchUrl, arrival, coldLaunch: true }
+      deepLinks.holdForSlot(startupSlots[0].slot, coldHeld)
+      // The window the link lands in takes the link's shape, not the last window's.
+      startupSlots[0] = slotShapedForLink(startupSlots[0], coldHeld)
     }
     // The window a cold-launch link lands in comes forward like any link's.
     const coldLinkSlot = coldLaunchUrl ? startupSlots[0]?.slot : undefined

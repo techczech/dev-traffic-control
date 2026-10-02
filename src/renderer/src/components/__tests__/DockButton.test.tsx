@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import type { DockMenuState } from '../../../../shared/ipc'
 
 /**
- * Ticket 27 (Dominik 2026-09-28): "the pin is whether it stays on top, the dock
+ * Ticket 27: "the pin is whether it stays on top, the dock
  * is where it goes". The Dock split button's main part docks at the last place;
  * its ▾ opens the four places. Neither part touches the pin.
  */

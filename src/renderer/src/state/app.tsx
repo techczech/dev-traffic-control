@@ -29,13 +29,14 @@ import type { RightPanel } from '../lib/rightPanelState'
 import { ALL_PROJECTS, sameScope, type WindowScope } from '../../../shared/windowScope'
 import type { DeepLinkLanding, DeepLinkView } from '../../../shared/deepLink'
 
-/** The six persistent surfaces in their command-bar order. */
+/** The seven persistent surfaces in their command-bar order. */
 export const TOP_LEVEL_SURFACES = [
   'dashboard',
   'inbox',
   'specs',
   'releases',
   'roadmap',
+  'requests',
   'handoffs'
 ] as const
 export type TopLevelSurface = (typeof TOP_LEVEL_SURFACES)[number]
@@ -69,6 +70,8 @@ export type View =
   /** A link can open a release at one version and feature (2026-09-26). */
   | { kind: 'releases'; version?: string; feature?: string }
   | { kind: 'roadmap'; idea?: string }
+  /** Ticket 38: Feature requests; `idea` opens that request's card (needs `project` under All projects). */
+  | { kind: 'requests'; idea?: string; project?: string }
   | { kind: 'handoffs'; path?: string }
   | { kind: 'thread'; project: string; thread: string; search?: SearchLanding }
   | { kind: 'runner'; path: string; detailed?: boolean; search?: SearchLanding }
@@ -369,7 +372,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
     // A window that exists because of a link is not sitting on the front page,
     // whichever of the three states the link ended in.
     setOnFrontPage(false)
-    // Links always open in focus mode (Dominik 2026-09-26): the record, not
+    // Links always open in focus mode: the record, not
     // the project list.
     setListMode('focus')
     if (landing.kind === 'refused') return

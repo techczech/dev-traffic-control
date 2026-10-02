@@ -763,9 +763,7 @@ export function LightRun({
             </button>
           </section>
           {/* Finish is the one way out, and it comes last, after the
-              observations, so nothing is left behind (Dominik 2026-09-26: "move
-              finish button - also let's make Finish the default - I never use
-              Everything works it will be obvious from the ticks"). */}
+              observations, so nothing is left behind. */}
           <div className="lr-foot lr-foot-end">
             <button
               className="lr-finish lr-finish-primary"

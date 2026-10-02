@@ -13,6 +13,15 @@
  * written with no lookup and no id resolution. Percent-encoding is accepted but
  * never required.
  *
+ * **One shorthand, and only one.** A link whose first segment is not a verb but
+ * is a valid project slug is read exactly as `open/<that slug>/<rest>`:
+ * `dtc://tallyboard/x.md` is `dtc://open/tallyboard/x.md`. Agents write it that
+ * way often enough that refusing it turned real records away (ticket 40). It is
+ * not a repair: the shorthand is part of the grammar, it applies only when
+ * `<rest>` is non-empty, and every segment passes exactly the checks an explicit
+ * `open` link does. A first segment that IS a verb always keeps the verb's
+ * meaning, so a project called `thread` must be addressed as `open/thread/…`.
+ *
  * **This parser is a security boundary.** Any web page can fire a custom-scheme
  * URL, so every string reaching it is attacker-controllable. It is therefore
  * written against the RAW text rather than `new URL()`: the WHATWG path state
@@ -45,8 +54,14 @@ const SLUG = /^[A-Za-z0-9_][A-Za-z0-9._-]*$/
  * are dated slugs the estate's own tools produce, but every traversal and
  * separator character is out: `/`, `\`, `:`, control characters and NUL.
  */
-// eslint-disable-next-line no-control-regex
-const FORBIDDEN_IN_SEGMENT = /[/\\:\u0000-\u001F\u007F]/
+// Characters that are invisible, reorder text or end a line: C0, DEL, C1
+// (incl. U+0085), Arabic letter mark, zero-width and bidi controls, line and
+// paragraph separators, word joiner and invisible operators, BOM, and the
+// interlinear annotation anchors. One class serves the segment check and the
+// inert-text cleaner.
+const UNSAFE_CHARS =
+  '\\u0000-\\u001F\\u007F-\\u009F\\u061C\\u200B-\\u200F\\u2028\\u2029\\u202A-\\u202E\\u2060-\\u2069\\uFEFF\\uFFF9-\\uFFFB'
+const FORBIDDEN_IN_SEGMENT = new RegExp(`[/\\\\:${UNSAFE_CHARS}]`)
 
 function decodeSegment(segment: string): string | null {
   try {
@@ -88,7 +103,10 @@ export function isDeepLinkUrl(raw: string): boolean {
  *
  * `null` is a refusal and is never recoverable by trimming or re-encoding the
  * input — a caller that "fixes" a rejected link has reintroduced the clamp this
- * function exists to prevent.
+ * function exists to prevent. The verb-less shorthand (module comment) lives
+ * HERE, inside the grammar, for that reason: it is a spelling the grammar
+ * accepts and runs through every check, not a second attempt at a refused link.
+ * It never drops, trims, decodes twice or reorders a segment.
  */
 export function parseDeepLink(raw: string): DeepLink | null {
   if (!isDeepLinkUrl(raw)) return null
@@ -101,9 +119,14 @@ export function parseDeepLink(raw: string): DeepLink | null {
   const body = hashAt < 0 ? afterScheme : afterScheme.slice(0, hashAt)
   const rawFragment = hashAt < 0 ? null : afterScheme.slice(hashAt + 1)
 
-  const [rawVerb, ...rawSegments] = body.split('/')
-  const verb = decodeSegment(rawVerb ?? '')?.toLowerCase() ?? ''
-  if (!(DEEP_LINK_VERBS as readonly string[]).includes(verb)) return null
+  const [rawVerb, ...afterVerb] = body.split('/')
+  const named = decodeSegment(rawVerb ?? '')?.toLowerCase() ?? ''
+  const isVerb = (DEEP_LINK_VERBS as readonly string[]).includes(named)
+  // Verb-less shorthand: the first segment is the project, and the link is an
+  // `open`. The project slug check, the segment checks and the non-empty rest
+  // below are the same ones an explicit `open` link meets.
+  const verb = isVerb ? (named as DeepLinkVerb) : 'open'
+  const rawSegments = isVerb ? afterVerb : [rawVerb ?? '', ...afterVerb]
 
   const segments = decodeSegments(rawSegments)
   if (!segments || segments.length === 0) return null
@@ -183,9 +206,13 @@ export type DeepLinkView =
  *
  * `behind` and `refused` are held deliberately apart: a path that confines
  * cleanly but is not on this Mac is rootsync being behind and says so, with a
- * retry; a path that fails to confine is refused, shows no path and offers only
- * a way out. If sync lag ever wore the refusal's appearance, the refusal would
- * stop meaning anything.
+ * retry; a path that fails to confine is refused and offers only a way out. If
+ * sync lag ever wore the refusal's appearance, the refusal would stop meaning
+ * anything.
+ *
+ * A refusal carries the link as it arrived (ticket 40) so the page can show it
+ * back as inert text for the reviewer to send to the agent that wrote it. It is
+ * never parsed, resolved or linked from there — see `inertLinkText`.
  */
 export type DeepLinkLanding =
   | {
@@ -203,11 +230,49 @@ export type DeepLinkLanding =
       lastPulledAt?: string
       coldLaunch: boolean
     }
-  | { kind: 'refused'; coldLaunch: boolean }
+  | { kind: 'refused'; url?: string; coldLaunch: boolean }
 
 /** What a retry from the sync-lag state comes back with. */
 export interface DeepLinkRetryResult {
   landing: DeepLinkLanding
   /** Set when the pull itself could not happen; said in human words. */
   pullFailed?: string
+}
+
+// ---------------------------------------------------------------------------
+// Showing a refused link back, as text and nothing more.
+// ---------------------------------------------------------------------------
+
+/** How much of a refused link the refusal page shows. */
+export const INERT_LINK_DISPLAY_LIMIT = 200
+/** How much of it the Copy button copies; a hostile page can fire megabytes. */
+export const INERT_LINK_COPY_LIMIT = 4096
+
+/**
+ * C0 and C1 controls, DEL, and every bidirectional or zero-width formatting
+ * character: the ones that can make displayed text read differently from what
+ * it is (a right-to-left override turning `dm.txe` into `exe.md`), plus
+ * zero-width characters that hide inside an otherwise ordinary-looking link.
+ */
+const UNSAFE_TEXT = new RegExp(`[${UNSAFE_CHARS}]`, 'g')
+
+/**
+ * A refused link made safe to show as text: unsafe characters removed, then
+ * cut to a length. `display` is truncated to about 200 characters with an
+ * ellipsis; `copy` is the whole cleaned link, capped. Neither is ever decoded,
+ * parsed or resolved — the refusal page shows what arrived, not what it meant.
+ */
+export function inertLinkText(raw: unknown): { display: string; copy: string } {
+  // Slice first: cleaning and splitting a megabyte string is wasted work. 2x
+  // leaves room for removed characters and surrogate pairs.
+  const head = typeof raw === 'string' ? raw.slice(0, INERT_LINK_COPY_LIMIT * 2) : ''
+  const cleaned = head.replace(UNSAFE_TEXT, '')
+  // By code point, so a cut never leaves half a surrogate pair behind.
+  const chars = Array.from(cleaned)
+  const copy = chars.slice(0, INERT_LINK_COPY_LIMIT).join('')
+  const display =
+    chars.length > INERT_LINK_DISPLAY_LIMIT
+      ? `${chars.slice(0, INERT_LINK_DISPLAY_LIMIT).join('')}…`
+      : cleaned
+  return { display, copy }
 }

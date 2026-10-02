@@ -1,7 +1,7 @@
 /**
  * Release records are Markdown, and their prose reaches the home and the
- * verdict sheet as a single line. Dominik saw the raw marks ("*All projects*",
- * "**new window**"). This splits a line into plain, bold, italic and code
+ * verdict sheet as a single line. Showing the raw marks (`*All projects*`,
+ * `**new window**`) is wrong. This splits a line into plain, bold, italic and code
  * segments, for rendering as elements: never as HTML, so record text can
  * inject nothing. Unmatched marks stay as text.
  */

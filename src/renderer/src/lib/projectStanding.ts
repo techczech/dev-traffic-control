@@ -9,6 +9,7 @@ import type { Thread } from '../../../main/qa/types'
 import type { WindowScope } from '../../../shared/windowScope'
 import { formatDenseAge } from './dateVocabulary'
 import { runAgeSource } from './format'
+import { isRequestIdeaOwed } from './requestFate'
 import { displayProjectName } from './projectSidebar'
 import { UNFILED } from './roadmap'
 import { requestIdentity } from '../../../shared/requestIdentity'
@@ -46,7 +47,7 @@ const RAIL_GROUP_ORDER: readonly RailGroup[] = ['needs-you', 'ticking-along', 'q
 /** Nothing has moved for a week — the app's existing coldness threshold. */
 const COLD_MS = 7 * 24 * 60 * 60 * 1000
 
-/** The four things that can be owed. Their sum is the "N waiting" count. */
+/** The five things that can be owed. Their sum is the "N waiting" count. */
 export interface ProjectOwed {
   /** Unanswered requests: a run that is neither finished nor chat-resolved. */
   requests: number
@@ -56,6 +57,8 @@ export interface ProjectOwed {
   decisions: number
   /** Handoffs written, never picked up, still live. */
   handoffs: number
+  /** Feature requests with fate `waiting` that he has not answered (ticket 38). */
+  suggestions: number
   total: number
 }
 
@@ -177,6 +180,16 @@ export function projectStandings(
     if (!isHandoffReady(handoff)) continue
     standing.owed.handoffs += 1
     owedAt(standing, handoff.updated)
+  }
+
+  for (const pool of snapshot.pools ?? []) {
+    const standing = find(pool.project)
+    if (!standing) continue
+    for (const idea of pool.ideas) {
+      if (!isRequestIdeaOwed(idea)) continue
+      standing.owed.suggestions += 1
+      owedAt(standing, idea.added ?? '')
+    }
   }
 
   for (const release of snapshot.releases) {
@@ -334,7 +347,7 @@ function blank(slug: string, name: string): Mutable {
   return {
     slug,
     name,
-    owed: { requests: 0, features: 0, decisions: 0, handoffs: 0, total: 0 },
+    owed: { requests: 0, features: 0, decisions: 0, handoffs: 0, suggestions: 0, total: 0 },
     release: { kind: 'none' },
     building: 0,
     openThreads: 0,
@@ -354,7 +367,7 @@ function owedAt(standing: Mutable, at: string): void {
 
 function settle(standing: Mutable, now: Date): ProjectStanding {
   const owed = standing.owed
-  const total = owed.requests + owed.features + owed.decisions + owed.handoffs
+  const total = owed.requests + owed.features + owed.decisions + owed.handoffs + owed.suggestions
   const needsYou = total > 0
   const cold = !standing.lastAt || now.getTime() - Date.parse(standing.lastAt) >= COLD_MS
   const group: RailGroup = needsYou
@@ -432,6 +445,11 @@ export function owedPhrase(owed: ProjectOwed, form: 'rail' | 'table' = 'rail'): 
   }
   if (owed.handoffs > 0) {
     parts.push(owed.handoffs === 1 ? 'handoff ready' : `${owed.handoffs} handoffs ready`)
+  }
+  if (owed.suggestions > 0) {
+    parts.push(
+      owed.suggestions === 1 ? 'suggestion to answer' : `${owed.suggestions} suggestions to answer`
+    )
   }
   return parts.join(' · ')
 }

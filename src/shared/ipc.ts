@@ -8,6 +8,7 @@ import type {
   PoolTier,
   ProjectPool
 } from '../main/qa/pool'
+import type { RequestFate } from '../main/qa/featureRequest'
 import type { QaReport, QaRequest, Thread, ThreadEntry } from '../main/qa/types'
 
 export const REPORT_RECOVERY_MARKER = 'The damaged report was set aside to '
@@ -104,6 +105,12 @@ export type PoolIdeaWriteInput =
       id: string
       title?: string
       bodyMarkdown?: string
+      /** A reviewer entry main appends to the body as it is on disk now (max 8 KB, no `---` line). */
+      appendEntry?: string
+      /** Ticket 42: approval sets `planned`; taking it off the roadmap sets `waiting`. */
+      fate?: RequestFate
+      /** Ticket 42: the release a feature is aimed at; `null` clears it (Unscheduled). */
+      candidate?: string | null
     }
 
 export interface PoolIdeaWriteResult {

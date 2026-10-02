@@ -4,6 +4,8 @@ import { useApp } from '../state/app'
 import { ArchiveOld } from '../components/ArchiveOld'
 import { useCommandScope } from '../commands/provider'
 import { requestKey } from '../lib/inbox'
+import { WaitingRow } from '../components/WaitingRows'
+import { formatWaited, waitingForHandoff } from '../lib/waitingRows'
 import {
   FLEET_SORTS,
   FLEET_SORT_LABELS,
@@ -206,20 +208,24 @@ export function FleetOverview(): React.JSX.Element {
               {model.handoffs.length === 0 ? (
                 <div className="rowempty">No handoff is waiting to be picked up.</div>
               ) : (
-                <div className="fleet-rows">
-                  {panel.shown.map((handoff) => (
-                    <button
+                <div className="fleet-rows waiting-rows">
+                  {panel.shown.map((handoff, position) => (
+                    <WaitingRow
                       key={handoff.path}
-                      type="button"
-                      className={`fleet-r${focused(`handoff:${handoff.path}`)}`}
-                      onFocus={() => setSelectedKey(`handoff:${handoff.path}`)}
-                      onClick={() => openProject(handoff.slug)}
-                    >
-                      <span className="t">
-                        <em>{handoff.name}</em> · {handoff.title}
-                      </span>
-                      <span className="age">{handoff.age}</span>
-                    </button>
+                      row={{
+                        key: `handoff:${handoff.path}`,
+                        title: handoff.title,
+                        at: handoff.at,
+                        age: formatWaited(handoff.at, now),
+                        wait: waitingForHandoff(handoff.at, now),
+                        target: { kind: 'surface', surface: 'handoffs' }
+                      }}
+                      prefix={handoff.name}
+                      first={position === 0}
+                      activeKey={activeKey}
+                      onFocus={setSelectedKey}
+                      onOpen={() => openProject(handoff.slug)}
+                    />
                   ))}
                   {panel.moreLabel && (
                     <div className="fleet-r more" data-fleet-handoffs-more>

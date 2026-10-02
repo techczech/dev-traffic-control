@@ -24,6 +24,14 @@ import { inlinePlain } from '../lib/inlineEmphasis'
 import type { ReleaseVerdict } from '../../../main/qa/releaseRecords'
 import { useCommandScope } from '../commands/provider'
 import { requestKey } from '../lib/inbox'
+import { exactTime } from '../lib/dateVocabulary'
+import { AgentsCard, WaitingCard } from '../components/WaitingRows'
+import {
+  arrangeWaiting,
+  readWaitingLayout,
+  writeWaitingLayout,
+  type WaitingLayout
+} from '../lib/waitingRows'
 import {
   homeReadingOrder,
   projectHome,
@@ -60,6 +68,12 @@ export function ProjectHome({ slug }: { slug: string }): React.JSX.Element {
     return () => clearInterval(timer)
   }, [])
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const [layout, setLayoutValue] = useState<WaitingLayout>(() => readWaitingLayout())
+  const [agentsOpen, setAgentsOpen] = useState(false)
+  const setLayout = (next: WaitingLayout): void => {
+    setLayoutValue(next)
+    writeWaitingLayout(next)
+  }
 
   const model = useMemo(
     () => (snapshot ? projectHome(snapshot, slug, now, undefined, housekeeping) : null),
@@ -76,6 +90,8 @@ export function ProjectHome({ slug }: { slug: string }): React.JSX.Element {
       navigate({ kind: 'note', path: target.path })
     } else if (target.kind === 'verdict') {
       openVerdict(target.id)
+    } else if (target.kind === 'request') {
+      navigate({ kind: 'requests', project: target.project, idea: target.idea })
     } else {
       navigate({ kind: target.surface })
     }
@@ -119,8 +135,13 @@ export function ProjectHome({ slug }: { slug: string }): React.JSX.Element {
   const { order, targets } = useMemo(() => {
     if (!model || model.empty)
       return { order: [] as string[], targets: new Map<string, HomeTarget>() }
-    return { order: homeReadingOrder(model), targets: homeTargets(model) }
-  }, [model])
+    const waitingKeys = arrangeWaiting(model.waitingAll, layout).shown.map((row) => row.key)
+    const agentKeys = agentsOpen ? model.withAgents.shown.map((row) => row.key) : []
+    return {
+      order: homeReadingOrder(model, waitingKeys, agentKeys),
+      targets: homeTargets(model)
+    }
+  }, [model, layout, agentsOpen])
   const activeKey = selectedKey && order.includes(selectedKey) ? selectedKey : (order[0] ?? null)
   const activeIndex = activeKey ? order.indexOf(activeKey) : -1
 
@@ -142,7 +163,11 @@ export function ProjectHome({ slug }: { slug: string }): React.JSX.Element {
     },
     // A note can be written into the project at any time, not only into an
     // empty one: the retired project view offered it in every state.
-    'nav.new-note': { enabled: !!model, handler: writeNote }
+    'nav.new-note': { enabled: !!model, handler: writeNote },
+    'nav.toggle-waiting-layout': {
+      enabled: !!model && model.waitingAll.length > 0,
+      handler: () => setLayout(layout === 'kind' ? 'newest' : 'kind')
+    }
   })
 
   if (!model) {
@@ -186,14 +211,17 @@ export function ProjectHome({ slug }: { slug: string }): React.JSX.Element {
   }
   const noRelease = model.release.kind === 'none'
 
-  const waiting = model.waiting.total > 0 && (
-    <section className="phome-card pull" aria-label="Waiting on you">
-      <header>
-        <CircleAlert className="ic" strokeWidth={2} />
-        Waiting on you<span className="n">{model.waiting.total}</span>
-      </header>
-      <Rows list={model.waiting} {...rowProps} />
-    </section>
+  const waiting = model.waitingAll.length > 0 && (
+    <WaitingCard rows={model.waitingAll} layout={layout} onLayout={setLayout} {...rowProps} />
+  )
+  const agents = model.withAgents.total > 0 && (
+    <AgentsCard
+      total={model.withAgents.total}
+      list={model.withAgents}
+      open={agentsOpen}
+      onToggle={() => setAgentsOpen((value) => !value)}
+      {...rowProps}
+    />
   )
 
   const release =
@@ -366,6 +394,7 @@ export function ProjectHome({ slug }: { slug: string }): React.JSX.Element {
             <>
               <div className="phome-stack">
                 {waiting}
+                {agents}
                 {release}
                 {requests}
                 {notes}
@@ -382,6 +411,7 @@ export function ProjectHome({ slug }: { slug: string }): React.JSX.Element {
             <>
               <div className="phome-stack">
                 {waiting}
+                {agents}
                 {release}
                 {/* Side by side only as a pair; one alone takes the column's
                     width, like the cards above it. */}
@@ -599,6 +629,8 @@ function homeTargets(model: ProjectHomeModel): Map<string, HomeTarget> {
   }
   for (const list of [
     model.waiting,
+    { shown: model.waitingAll },
+    model.withAgents,
     model.requests,
     model.notes,
     model.threads,
@@ -609,26 +641,4 @@ function homeTargets(model: ProjectHomeModel): Map<string, HomeTarget> {
     for (const row of list.shown) targets.set(row.key, row.target)
   }
   return targets
-}
-
-/** The exact day and time, for hovering over a row's short date. */
-function exactTime(iso: string): string | undefined {
-  // A bare day (a release row's `since:`) has no time to show.
-  const day = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (day) {
-    return new Date(Number(day[1]), Number(day[2]) - 1, Number(day[3])).toLocaleDateString(
-      'en-GB',
-      { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }
-    )
-  }
-  const time = new Date(iso)
-  if (Number.isNaN(time.getTime())) return undefined
-  return time.toLocaleString('en-GB', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
 }

@@ -33,7 +33,13 @@ type PoolWriterModule = typeof import('../pool') & {
     root: string,
     project: string,
     id: string,
-    changes: { title?: string; bodyMarkdown?: string }
+    changes: {
+      title?: string
+      bodyMarkdown?: string
+      appendEntry?: string
+      fate?: 'waiting' | 'planned'
+      candidate?: string | null
+    }
   ) => Promise<ProjectPool>
   addProjectPoolIdea?: (
     root: string,
@@ -291,7 +297,7 @@ describe('roadmap pool', () => {
     const root = await temporaryDirectory()
     const project = 'wordforge-desktop'
     const ideaPath = await writeIdea(root, project, 'collections', {
-      title: 'Collections working properly',
+      title: 'Saved lists working properly',
       tier: 'functionality',
       added: '2026-08-06'
     })
@@ -431,6 +437,132 @@ describe('roadmap pool', () => {
     expect(pool.ideas[0]).toMatchObject({
       title: 'First title',
       bodyMarkdown: 'Changed body.\n\n- one\n- two'
+    })
+  })
+
+  test('setting fate and candidate rewrites those two lines and keeps every other byte', async () => {
+    const root = await temporaryDirectory()
+    const project = 'dev-traffic-control'
+    const ideaPath = path.join(root, project, 'roadmap', 'first.md')
+    await mkdir(path.dirname(ideaPath), { recursive: true })
+    const original =
+      '---\nid: first\ntitle: First title\ntier: functionality\nby: reviewer\nfate: waiting\nunknown-key: "keep: this"\n---\n\nBody.\n'
+    await writeFile(ideaPath, original)
+    const writer = (await import('../pool')) as PoolWriterModule
+
+    // A missing candidate line is added inside the frontmatter, never the body.
+    let pool = await writer.editProjectPoolIdea!(root, project, 'first', {
+      fate: 'planned',
+      candidate: '0.23.0'
+    })
+    expect(await readFile(ideaPath, 'utf8')).toBe(
+      original
+        .replace('fate: waiting', 'fate: planned')
+        .replace('\n---\n\nBody', '\ncandidate: 0.23.0\n---\n\nBody')
+    )
+    expect(pool.ideas[0]).toMatchObject({
+      candidateRelease: '0.23.0',
+      request: { fate: 'planned' }
+    })
+
+    // An existing line is replaced in place, and null removes it.
+    await writer.editProjectPoolIdea!(root, project, 'first', { candidate: '0.37.0' })
+    expect(await readFile(ideaPath, 'utf8')).toContain('candidate: 0.37.0\n---')
+    pool = await writer.editProjectPoolIdea!(root, project, 'first', { candidate: null })
+    expect(await readFile(ideaPath, 'utf8')).not.toContain('candidate')
+    expect(await readFile(ideaPath, 'utf8')).toContain('unknown-key: "keep: this"\n---\n\nBody.\n')
+    expect(pool.ideas[0].candidateRelease).toBeUndefined()
+  })
+
+  test('a candidate that is not a version is refused and writes nothing', async () => {
+    const root = await temporaryDirectory()
+    const project = 'dev-traffic-control'
+    const ideaPath = path.join(root, project, 'roadmap', 'first.md')
+    await mkdir(path.dirname(ideaPath), { recursive: true })
+    const original = '---\nid: first\ntitle: First title\ntier: functionality\n---\n\nBody.\n'
+    await writeFile(ideaPath, original)
+    const writer = (await import('../pool')) as PoolWriterModule
+
+    await expect(
+      writer.editProjectPoolIdea!(root, project, 'first', { candidate: '0.1.0\nfate: built' })
+    ).rejects.toThrow('candidate release')
+    expect(await readFile(ideaPath, 'utf8')).toBe(original)
+  })
+
+  describe('guarded request edits', () => {
+    const head =
+      '---\nid: first\ntitle: First title\ntier: functionality\nfate: waiting\n---\n\nBody.\n'
+
+    async function setup(content = head): Promise<{
+      ideaPath: string
+      edit: NonNullable<PoolWriterModule['editProjectPoolIdea']>
+      call: (changes: Record<string, unknown>) => Promise<ProjectPool>
+    }> {
+      const root = await temporaryDirectory()
+      const project = 'dev-traffic-control'
+      const ideaPath = path.join(root, project, 'roadmap', 'first.md')
+      await mkdir(path.dirname(ideaPath), { recursive: true })
+      await writeFile(ideaPath, content)
+      const writer = (await import('../pool')) as PoolWriterModule
+      const edit = writer.editProjectPoolIdea!
+      return {
+        ideaPath,
+        edit,
+        call: (changes) => edit(root, project, 'first', changes as never)
+      }
+    }
+
+    test.each([[['0.1.0']], [37], [{ v: '0.1.0' }]])(
+      'a non-string candidate %j is refused and writes nothing',
+      async (candidate) => {
+        const { ideaPath, call } = await setup()
+        await expect(call({ candidate })).rejects.toThrow('candidate release')
+        expect(await readFile(ideaPath, 'utf8')).toBe(head)
+      }
+    )
+
+    test.each([['done'], [7], [['planned']]])('an invalid fate %j is refused', async (fate) => {
+      const { ideaPath, call } = await setup()
+      await expect(call({ fate })).rejects.toThrow('fate')
+      expect(await readFile(ideaPath, 'utf8')).toBe(head)
+    })
+
+    test('a block-scalar fate or candidate line is refused and writes nothing', async () => {
+      const folded = head.replace('fate: waiting', 'fate: >\n  waiting')
+      const a = await setup(folded)
+      await expect(a.call({ fate: 'planned' })).rejects.toThrow('several lines')
+      expect(await readFile(a.ideaPath, 'utf8')).toBe(folded)
+
+      const continued = head.replace('---\n\nBody', 'candidate: 0.1.0\n  more\n---\n\nBody')
+      const b = await setup(continued)
+      await expect(b.call({ candidate: null })).rejects.toThrow('several lines')
+      expect(await readFile(b.ideaPath, 'utf8')).toBe(continued)
+    })
+
+    test('appendEntry keeps an agent entry written after the renderer scanned', async () => {
+      const { ideaPath, call } = await setup()
+      // The agent answers after the renderer's scan and before his click lands.
+      await writeFile(ideaPath, `${head}\n## Agent entry · 2026-10-02 · Built\n\nDone.\n`)
+      await call({
+        fate: 'planned',
+        appendEntry: '## Reviewer entry · 2026-10-02 · Approved for the roadmap'
+      })
+      expect(await readFile(ideaPath, 'utf8')).toBe(
+        head.replace('fate: waiting', 'fate: planned') +
+          '\n## Agent entry · 2026-10-02 · Built\n\nDone.\n\n' +
+          '## Reviewer entry · 2026-10-02 · Approved for the roadmap\n'
+      )
+    })
+
+    test('appendEntry with a frontmatter fence line, an oversized or non-string entry is refused', async () => {
+      const { ideaPath, call } = await setup()
+      await expect(call({ appendEntry: 'Words\n---\nfate: built' })).rejects.toThrow('---')
+      await expect(call({ appendEntry: 'x'.repeat(9000) })).rejects.toThrow('too long')
+      await expect(call({ appendEntry: 5 })).rejects.toThrow('non-empty text')
+      expect(await readFile(ideaPath, 'utf8')).toBe(head)
+      // A line that merely starts with dashes is ordinary text.
+      await call({ appendEntry: '## Reviewer entry\n\n--- not a fence' })
+      expect(await readFile(ideaPath, 'utf8')).toContain('--- not a fence\n')
     })
   })
 

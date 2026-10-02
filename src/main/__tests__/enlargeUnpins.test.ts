@@ -7,7 +7,7 @@ import {
 } from '../enlargeUnpins'
 import { NARROW_WIDTH } from '../windowLayout'
 
-// Ticket 26 (Dominik 2026-09-28): a pinned window is only ever sidebar-sized.
+// Ticket 26: a pinned window is only ever sidebar-sized.
 describe('shouldUnpinOnResize', () => {
   test('growing past the sidebar width unpins', () => {
     expect(shouldUnpinOnResize(460, 461, NARROW_WIDTH)).toBe(true)
@@ -222,7 +222,7 @@ describe('watchEnlargementUnpins', () => {
     w.resizeTo(1280)
     expect(w.unpin).not.toHaveBeenCalled()
     expect(w.isPinned()).toBe(true)
-    // Once it has landed, his own drag wider still unpins.
+    // Once it has landed, the reviewer's own drag wider still unpins.
     w.resizeTo(1400)
     expect(w.unpin).toHaveBeenCalledTimes(1)
   })

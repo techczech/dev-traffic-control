@@ -32,26 +32,26 @@ describe('release records', () => {
     const raw = `---
 app: TallyBoard
 release: 0.34.0
-repo: apps/tally-board
+repo: apps/example-app
 updated: 2026-09-27
 ---
 
-Everything since 0.32.3 in one release: presenting on a venue screen from a /p link.
+Everything since 0.32.3 in one release: sharing a read-only view from a /v link.
 
 Designs locked 25–27 September.
 
-## Present on a venue screen from a /p link {#venue-screen}
+## Share a read-only view from a /v link {#read-only-view}
 state: built
-The talk's short link plus /p opens a full-screen copy of your projector window.
+The talk's short link plus /v opens a read-only copy of the page.
 `
     const record = parseReleaseRecord(raw, '/records/tallyboard/releases/0.34.0.md')
 
     expect(record.intro).toBe(
-      'Everything since 0.32.3 in one release: presenting on a venue screen from a /p link.\n\nDesigns locked 25–27 September.'
+      'Everything since 0.32.3 in one release: sharing a read-only view from a /v link.\n\nDesigns locked 25–27 September.'
     )
-    expect(record.features.map((feature) => feature.id)).toEqual(['venue-screen'])
+    expect(record.features.map((feature) => feature.id)).toEqual(['read-only-view'])
     expect(record.features[0].prose).toBe(
-      "The talk's short link plus /p opens a full-screen copy of your projector window."
+      "The talk's short link plus /v opens a read-only copy of the page."
     )
 
     const bare = parseReleaseRecord(

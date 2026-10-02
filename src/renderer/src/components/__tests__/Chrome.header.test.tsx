@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import type { WindowScope } from '../../../../shared/windowScope'
 
 /**
- * Ticket 14. Dominik's screenshot of 0.21.0-alpha.2 showed the header naming
+ * Ticket 14. A screenshot of 0.21.0-alpha.2 showed the header naming
  * two things twice: the app printed its own name in the middle of the titlebar,
  * and "Dashboard" appeared as the selected tab and again as a heading beneath
  * it. ADR-0016's design lock allows each thing exactly one naming on one screen.
@@ -69,7 +69,7 @@ test('the app does not print its own name inside itself', () => {
 })
 
 test('the build marker has left the header entirely', () => {
-  // Dominik, 2026-09-13: "move the app version to smaller in footer". It is
+  // The app version is smaller and sits in the footer. It is
   // reference rather than chrome, and in the header it was one more thing a
   // long project name had to be measured against. It now lives in the key-hint
   // bar; this asserts only that the header no longer carries it.
@@ -125,7 +125,7 @@ test('the surface is named by its tab and nowhere else on the screen', () => {
 
   // The tab names the surface. The one other place its name may appear is the
   // DTC Dash button under All projects, which goes to that very surface
-  // (Dominik 2026-09-26 named both).
+  //.
   const label = app.scope.kind === 'project' ? 'Project Dash' : 'DTC Dash'
   const named = screen.getAllByText(label).filter((node) => !node.closest('.homebtn'))
   expect(named).toHaveLength(1)
@@ -137,7 +137,7 @@ test('inside a project Project Dash is the selected first tab without a crumb', 
   app.scope = { kind: 'project', slug: 'wordforge-desktop' }
   const { container } = render(<SurfaceTabs />)
   const tabs = [...container.querySelectorAll('.surface-tabs button')]
-  expect(tabs).toHaveLength(6)
+  expect(tabs).toHaveLength(7)
   expect(tabs[0].textContent).toBe('Project Dash')
   expect(tabs[0].getAttribute('aria-current')).toBe('page')
   expect(container.querySelector('.surface-home')).toBeNull()
@@ -145,8 +145,8 @@ test('inside a project Project Dash is the selected first tab without a crumb', 
 })
 
 describe('the DTC Dash home button (alpha.28)', () => {
-  // Dominik on alpha.28: the teal "DTC Dash" chip "looks like active project -
-  // let's change colour and just keep the home button". Teal in the bar now
+  // The teal "DTC Dash" chip read as the active project, so the home button
+  // is a plain button instead. Teal in the bar now
   // means only the project/scope chip.
   test.each([
     ['narrow', 460],

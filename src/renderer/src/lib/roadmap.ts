@@ -212,7 +212,7 @@ const QA_REPORT_EVIDENCE: ReportEvidenceClassifiers = {
   }
 }
 
-/** One report-wide answer to “has Dominik done work here, and in which channels?” */
+/** One report-wide answer to “has the reviewer done work here, and in which channels?” */
 export function reportWorkEvidence(report: QaReport | null | undefined): ReportWorkEvidence {
   const evidence: MutableEvidence = {
     statuses: 0,
@@ -414,7 +414,7 @@ function threadContext(t: Thread): string {
 }
 
 /**
- * What is blocked on Dominik: open test/review requests (a request waiting is,
+ * What is blocked on the reviewer: open test/review requests (a request waiting is,
  * by definition, waiting on him) plus threads whose move is `me`. Oldest first
  * — the stalest thing needs unblocking most (the cabinet-rescue lesson).
  *
@@ -479,7 +479,7 @@ function ageMs(iso: string, now: Date): number {
 
 export interface ProjectVital {
   project: string
-  you: number // open items whose move is on Dominik
+  you: number // open items whose move is on the reviewer
   agents: number // open items whose move is on an agent
   lastAt: string // most recent activity ISO/date ('' if unknown)
   cold: boolean
@@ -508,7 +508,7 @@ export function projectVitals(
   for (const r of openRuns(s)) {
     if (!scopeIncludes(scope, [r.project])) continue
     const v = get(r.project)
-    v.you += 1 // a waiting/in-progress request is on Dominik
+    v.you += 1 // a waiting/in-progress request is on the reviewer
     const a = runAge(r)
     if (a > v.lastAt) v.lastAt = a
   }
@@ -528,7 +528,7 @@ export function projectVitals(
   const COLD_MS = 7 * 24 * 60 * 60 * 1000
   const vitals = [...map.values()]
   for (const v of vitals) v.cold = !!v.lastAt && ageMs(v.lastAt, now) >= COLD_MS
-  // Busiest first: things needing Dominik, then recency.
+  // Busiest first: things needing the reviewer, then recency.
   return vitals.sort((a, b) => b.you - a.you || (a.lastAt < b.lastAt ? 1 : -1))
 }
 

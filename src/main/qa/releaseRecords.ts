@@ -200,7 +200,7 @@ export async function readProjectRelease(root: string, project: string): Promise
   // left TallyBoard, whose older releases were never marked shipped, with no
   // release in flight at all: Releases drew every version as empty notes while
   // the project home, which reads the newest record, showed 0.35.0 in flight
-  // (Dominik 2026-09-27). Both now agree.
+  //. Both now agree.
   const inFlightVersion = [...releasesInFlight].sort((left, right) =>
     compareReleaseVersions(right.version, left.version)
   )[0]?.version

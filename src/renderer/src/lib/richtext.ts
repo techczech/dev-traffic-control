@@ -61,7 +61,7 @@ export type DocBlock =
   | { kind: 'image'; src: string; alt: string }
   | { kind: 'embed'; lang: 'html' | 'svg'; code: string }
   // A decision toggle (a ```decision fence): a question plus clickable
-  // options Dominik answers with one click instead of a comment.
+  // options the reviewer answers with one click instead of a comment.
   // `pictures[i]` are the images linked to `options[i]` (empty when none);
   // `section` is the nearest preceding H2/H3 id, null before any heading.
   | {

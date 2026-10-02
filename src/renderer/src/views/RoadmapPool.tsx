@@ -523,7 +523,7 @@ export function Roadmap(): React.JSX.Element {
   const projectName =
     sidebarProjects.find((project) => project.project === selectedProject)?.app ??
     displayName(selectedProject, snapshot?.releases ?? [])
-  // Ticket 07, as far as Dominik asked on 2026-09-26: the window's scope
+  // Ticket 07, as far as the reviewer asked on 2026-09-26: the window's scope
   // decides the project, so this surface draws no project list of its own.
   if (snapshot?.rootMissing) {
     return (

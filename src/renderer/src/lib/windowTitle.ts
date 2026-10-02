@@ -10,7 +10,7 @@ const APP = 'Dev Traffic Control'
  * The macOS window title.
  *
  * Links open new windows, so windows accumulate and a title that reads
- * "Dev Traffic Control" on every one of them tells Dominik nothing in the
+ * "Dev Traffic Control" on every one of them tells the reviewer nothing in the
  * Window menu, in Mission Control, or when hovering the Dock. The title names
  * what this particular window is holding: the app, the project it is scoped
  * to, and the thing open inside it.
@@ -45,7 +45,7 @@ export function windowTitle(
   return parts.join(' — ')
 }
 
-/** What this window has open, in Dominik's words rather than the view's kind. */
+/** What this window has open, in the reviewer's words rather than the view's kind. */
 function openThing(
   view: View,
   snapshot: QaSnapshot | null,
@@ -73,6 +73,8 @@ function openThing(
       return 'Releases'
     case 'roadmap':
       return 'Roadmap'
+    case 'requests':
+      return 'Feature requests'
     case 'handoffs':
       return 'Handoffs'
     case 'settings':
@@ -87,8 +89,7 @@ function openThing(
 /**
  * The build marker, short enough to sit in the footer without shouting.
  *
- * Dominik, 2026-09-13: "move the app version to smaller in footer … no need
- * for v or alpha just 0.21.0-a.3". So `0.21.0-alpha.4` reads `0.21.0-a.4`, and
+ * The version is shown without a "v" and with a short prerelease tag: `0.21.0-alpha.4` reads `0.21.0-a.4`, and
  * a plain release keeps its bare number.
  */
 export function shortVersion(version: string): string {

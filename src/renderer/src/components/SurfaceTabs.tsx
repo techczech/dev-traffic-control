@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { TOP_LEVEL_SURFACES, surfaceApplies, useApp } from '../state/app'
 import type { TopLevelSurface } from '../state/app'
 import { needsSpecCount, specRows } from '../lib/specs'
@@ -9,6 +10,7 @@ const LABELS: Record<Exclude<TopLevelSurface, 'dashboard'>, string> = {
   specs: 'Specs',
   releases: 'Releases',
   roadmap: 'Roadmap',
+  requests: 'Feature requests',
   handoffs: 'Handoffs'
 }
 
@@ -26,8 +28,15 @@ export function SurfaceTabs(): React.JSX.Element {
   // Get started is reached from the Dash and drawn under its tab (ticket 34).
   const current = view.kind === 'get-started' ? 'dashboard' : view.kind
 
+  // Seven tabs do not all fit at 460: the selected one is always brought into view.
+  const bar = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    const selected = bar.current?.querySelector<HTMLElement>('button.on')
+    selected?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+  }, [current])
+
   return (
-    <nav className="surface-tabs" aria-label="App surfaces">
+    <nav className="surface-tabs" aria-label="App surfaces" ref={bar}>
       {TOP_LEVEL_SURFACES.map((kind) => {
         // Under *All projects* the four project surfaces are visibly not
         // applicable — drawn dimmed and inert — never a silent stand-in.

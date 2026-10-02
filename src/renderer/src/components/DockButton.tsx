@@ -6,7 +6,7 @@ import { displayChord } from '../commands/keymap'
 import { useCommandScope, useCommands } from '../commands/provider'
 
 /**
- * Ticket 27 (Dominik 2026-09-28): "split pin and dock command - the pin is
+ * Ticket 27: "split pin and dock command - the pin is
  * whether it stays on top, the dock is where it goes - make the dock button -
  * normal click uses last position - click on dropdown menu of docking options
  * drops down".

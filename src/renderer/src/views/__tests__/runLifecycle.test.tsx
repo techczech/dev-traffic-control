@@ -1001,7 +1001,7 @@ id: broken
 title: Broken request
 mode: light
 ---
-This is the body Dominik needs to read.
+This is the body the reviewer needs to read.
 `
     installBridge({
       openRun: vi.fn(async () => ({
@@ -1021,7 +1021,7 @@ This is the body Dominik needs to read.
     await settle()
 
     const plain = rendered.container.querySelector('.plainraw')
-    expect(plain?.textContent).toBe('This is the body Dominik needs to read.\n')
+    expect(plain?.textContent).toBe('This is the body the reviewer needs to read.\n')
     expect(plain?.textContent).not.toContain('mode: light')
   })
 })

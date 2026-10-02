@@ -62,7 +62,7 @@ export class PendingDeepLinks {
 }
 
 /**
- * The window rule, settled by Dominik on 2026-09-11 and stated once here.
+ * The window rule, stated once here.
  *
  * **Running ⇒ a NEW window. Not running ⇒ the main window.** A link never
  * touches a window that already exists: no scope change, no navigation, no

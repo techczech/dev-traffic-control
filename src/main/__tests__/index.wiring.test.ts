@@ -244,10 +244,55 @@ describe('main/index.ts inbox-state wiring', () => {
     expect(create).toContain('watchEnlargementUnpins(win, {')
     expect(create).toContain('sidebarWidth: NARROW_WIDTH')
     expect(create).toContain('unpin: () => applyPinned(win, false)')
-    expect(apply).toContain("win.setAlwaysOnTop(value, 'floating')")
-    expect(apply).toContain('windowManager.setLayout(win, { ...current, pinned: value })')
+    expect(apply).toContain("win.setAlwaysOnTop(requested, 'floating')")
+    expect(apply).toContain(
+      'windowManager.setLayout(win, { ...current, pinned: requested && !temporary })'
+    )
     expect(apply).toContain(
       'win.webContents.send(IPC.windowSettingsChanged, settingsForWindow(win))'
+    )
+  })
+
+  // No big window stays on top, whichever route made it big.
+  test('the pin invariant is enforced on every route to a wide window', async () => {
+    const source = await indexSource()
+    const create = blockBetween(
+      source,
+      'function createWindow(',
+      'function reconcileWindowsWithDisplays'
+    )
+    const apply = blockBetween(source, 'function applyPinned(', 'function isWindowPinned(')
+    const preset = blockBetween(
+      source,
+      'ipcMain.handle(IPC.setWidthPreset',
+      'ipcMain.handle(IPC.setWindowMode'
+    )
+
+    // A saved or inherited pin never starts a wide window on top.
+    expect(create).toContain(
+      'const startPinned = wantsPin && mayBePinned(geometry.bounds.width, NARROW_WIDTH)'
+    )
+    // Un-docking, restored bounds and a stuck lift are caught by the guard.
+    expect(create).toContain('guardPinInvariant(win, {')
+    // Ticket 41: narrowing pins through the pin button's own path.
+    expect(create).toContain('pin: () => applyPinned(win, true)')
+    expect(create).toContain('lift,')
+    expect(create).toMatch(/applyInitialLayout\(win\)\s+pinGuard\.settle\(\)/)
+    // Pressing the pin on a wide window pins it temporarily: on top and shown
+    // pinned, but the saved layout records unpinned.
+    expect(apply).toContain('requested && !mayBePinned(win.getBounds().width, NARROW_WIDTH)')
+    expect(apply).toContain('pin.active = temporary')
+    expect(apply).toContain('win.setAlwaysOnTop(requested, ')
+    expect(apply).toContain('pinned: requested && !temporary')
+    expect(source).toContain('pinned: true } : settings')
+    expect(create).toContain('temporary,')
+    // The link lift ends on his first touch as well as on blur.
+    expect(create).toContain('watchInteraction: (listener) => watchFirstTouch(win, listener)')
+    expect(source).toContain("win.on('will-move', listener)")
+    expect(source).toContain("contents.on('input-event', onInput)")
+    // Narrow still pins: resize first, so no resize event sees the pin on a wide window.
+    expect(preset.indexOf('applyWidth(win, preset)')).toBeLessThan(
+      preset.indexOf("win.setAlwaysOnTop(pinned, 'floating')")
     )
   })
 
@@ -297,7 +342,7 @@ describe('main/index.ts inbox-state wiring', () => {
     expect(create).toContain('screen.getDisplayNearestPoint')
     expect(create).toContain('windowGeometryForCreation(slot.bounds, targetWorkArea)')
     expect(create).not.toContain('minimumWindowSize(restoredBounds)')
-    expect(create).toContain('const startPinned = preventPinnedOverlap')
+    expect(create).toContain('const wantsPin = preventPinnedOverlap')
   })
 
   test('persists the final post-sanitise cascade bounds before constructing a new window', async () => {

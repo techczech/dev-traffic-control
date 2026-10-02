@@ -175,7 +175,7 @@ describe('scanQaRepo', () => {
     const root = await fixture()
     await writeFile(
       path.join(root, 'tallyboard/2026-07-17-root-level.resolved.md'),
-      '---\nresolved_by: agent\nat: 2026-07-25T09:00:00.000Z\n---\nResolved in chat: Dominik approved the padding.'
+      '---\nresolved_by: agent\nat: 2026-07-25T09:00:00.000Z\n---\nResolved in chat: the reviewer approved the padding.'
     )
     const { runs } = await scanQaRepo(root)
     // The marker is not a run of its own.

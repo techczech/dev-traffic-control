@@ -48,12 +48,11 @@ export async function confineRequestPath(
  * Confined-but-absent and refused are separate outcomes on purpose
  * (ADR-0016 § Security): a link whose path confines cleanly but names a file
  * this Mac does not have yet is rootsync being behind, and must not be reported
- * as a safety refusal. If sync lag ever wore the refusal's appearance, Dominik
+ * as a safety refusal. If sync lag ever wore the refusal's appearance, the reviewer
  * would learn to ignore refusals.
  */
 export type ConfinedRecordPath =
-  | { kind: 'confined'; path: string; exists: boolean }
-  | { kind: 'refused' }
+  { kind: 'confined'; path: string; exists: boolean } | { kind: 'refused' }
 
 const REFUSED: ConfinedRecordPath = { kind: 'refused' }
 
@@ -99,7 +98,11 @@ export async function confineRecordPath(
       if (code !== 'ENOENT' && code !== 'ENOTDIR') return REFUSED
       // The parent is confined and every remaining segment is a plain name, so
       // the full path is inside the root — it simply is not on this Mac yet.
-      return { kind: 'confined', path: path.join(candidate, ...segments.slice(index + 1)), exists: false }
+      return {
+        kind: 'confined',
+        path: path.join(candidate, ...segments.slice(index + 1)),
+        exists: false
+      }
     }
     if (!isInside(canonicalRoot, canonicalCandidate)) return REFUSED
     resolved = canonicalCandidate

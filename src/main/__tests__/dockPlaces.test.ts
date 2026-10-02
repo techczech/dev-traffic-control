@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'vitest'
 import {
   dockBounds,
+  DOCK_REPEAT_MS,
+  dockClickStep,
   dockMenuState,
+  type DockCycle,
   otherDisplay,
   placeIdFor,
   resolveDockPlace,
@@ -9,7 +12,7 @@ import {
 } from '../dockPlaces'
 import { NARROW_WIDTH } from '../windowLayout'
 
-// Ticket 27 (Dominik 2026-09-28): the dock is where the window goes.
+// Ticket 27: the dock is where the window goes.
 const LAPTOP: DockDisplay = { id: 1, workArea: { x: 0, y: 25, width: 1512, height: 920 } }
 const MONITOR: DockDisplay = { id: 2, workArea: { x: 1512, y: 0, width: 2560, height: 1415 } }
 const TWO = [LAPTOP, MONITOR]
@@ -89,5 +92,79 @@ describe('dockMenuState', () => {
     ])
     // Never docked: the right edge of this screen.
     expect(menu.last).toBe('right-this')
+  })
+})
+
+// Ticket 41: "the multiple clicking of the sidebar button still does not rotate
+// through positions".
+describe('dockClickStep', () => {
+  /** Click `count` times `gap` ms apart, applying each result to the display the window lands on. */
+  function clicks(
+    displays: readonly DockDisplay[],
+    startId: number,
+    count: number,
+    gap = 1000,
+    remembered: { edge: 'left' | 'right'; displayId: number } | null = null
+  ): string[] {
+    let cycle: DockCycle | null = null
+    let place = remembered
+    let currentId = startId
+    const edges: string[] = []
+    for (let index = 0; index < count; index += 1) {
+      const step = dockClickStep(cycle, 10_000 + index * gap, place, displays, currentId)
+      cycle = step.cycle
+      place = step.target
+      currentId = step.target.displayId
+      edges.push(`${step.target.edge}-${step.target.displayId}`)
+    }
+    return edges
+  }
+
+  test('the first click docks at the last-used place', () => {
+    expect(clicks(TWO, 1, 1, 1000, { edge: 'left', displayId: 2 })).toEqual(['left-2'])
+    expect(clicks(TWO, 1, 1)).toEqual(['right-1'])
+  })
+
+  test('repeated clicks step right/this, left/this, right/other, left/other, then wrap', () => {
+    expect(clicks(TWO, 1, 6)).toEqual([
+      'right-1',
+      'left-1',
+      'right-2',
+      'left-2',
+      'right-1',
+      'left-1'
+    ])
+  })
+
+  test('the run is named from the screen it started on, though the window moves screens', () => {
+    expect(clicks(TWO, 2, 3)).toEqual(['right-2', 'left-2', 'right-1'])
+  })
+
+  test('the run continues from the remembered place', () => {
+    expect(clicks(TWO, 1, 3, 1000, { edge: 'left', displayId: 1 })).toEqual([
+      'left-1',
+      'right-2',
+      'left-2'
+    ])
+  })
+
+  test('with one display it alternates right and left', () => {
+    expect(clicks([LAPTOP], 1, 5)).toEqual(['right-1', 'left-1', 'right-1', 'left-1', 'right-1'])
+  })
+
+  test('a click more than the repeat window after the last starts again at the last-used place', () => {
+    const first = dockClickStep(null, 0, null, TWO, 1)
+    const second = dockClickStep(first.cycle, DOCK_REPEAT_MS, first.target, TWO, 1)
+    expect(second.target).toEqual({ edge: 'left', displayId: 1 })
+    const late = dockClickStep(second.cycle, DOCK_REPEAT_MS * 2 + 1, second.target, TWO, 1)
+    expect(late.target).toEqual({ edge: 'left', displayId: 1 })
+    expect(late.cycle.place).toBe('left-this')
+  })
+
+  test('no cycle (any other window action ended it) docks at the last-used place', () => {
+    expect(dockClickStep(null, 5, { edge: 'left', displayId: 2 }, TWO, 1).target).toEqual({
+      edge: 'left',
+      displayId: 2
+    })
   })
 })

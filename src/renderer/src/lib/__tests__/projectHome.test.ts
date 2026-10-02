@@ -42,6 +42,12 @@ describe('the full home (state 9)', () => {
   test('waiting on you lists what is owed, newest first, each a way in', () => {
     const { waiting } = home()
     expect(waiting.total).toBe(3)
+    // Ticket 37: the card arranges the full list itself; it is the same rows.
+    const model = home()
+    expect(model.waitingAll.map((row) => row.key)).toEqual(
+      model.waiting.shown.map((row) => row.key)
+    )
+    expect(model.waitingAll.every((row) => !!row.wait.action)).toBe(true)
     expect(waiting.shown.map((row) => [row.title, row.age])).toEqual([
       ['Action bar placement', expect.stringMatching(/^\d\d:\d\d$/)],
       ['Collections as unwritten pieces', 'yesterday'],
@@ -65,7 +71,7 @@ describe('the full home (state 9)', () => {
     ])
   })
 
-  test('the three roadmap lanes count ranked ideas only, in his words', () => {
+  test("the three roadmap lanes count ranked ideas only, in the reviewer's words", () => {
     expect(home().roadmap).toEqual({
       total: 3,
       lanes: [
@@ -101,6 +107,42 @@ describe('the full home (state 9)', () => {
     expect(model.handoffs.shown.map((row) => row.title)).toEqual(['Export block model'])
     expect(model.specs.shown.map((row) => row.title)).toEqual(['HTML export as a document'])
     expect(model.specs.shown[0].target.kind).toBe('runner')
+  })
+
+  test('every Dash list is newest first, specs included, whatever their state', () => {
+    // Older, and in the state the Specs tab lists first.
+    const waitingSpec = spec('wordforge', 'Old spec waiting on his comment', A_MONTH)
+    // Newer, and in a state the Specs tab lists last.
+    const writing = spec('wordforge', 'Newer spec still being written', YESTERDAY)
+    writing.request.document = { headings: [], bodyMarkdown: '' }
+    const model = projectHome(
+      snapshot({
+        projects: ['wordforge'],
+        runs: [waitingSpec, writing]
+      }),
+      'wordforge',
+      NOW
+    )!
+    expect(model.specs.shown.map((row) => row.title)).toEqual([
+      'Newer spec still being written',
+      'Old spec waiting on his comment'
+    ])
+    const full = home()
+    for (const list of [
+      full.waiting,
+      full.waitingAll,
+      full.withAgents,
+      full.requests,
+      full.notes,
+      full.threads,
+      full.handoffs,
+      full.specs,
+      full.rounds
+    ]) {
+      const rows = 'shown' in list ? list.shown : list
+      const stamps = rows.map((row) => row.at).filter(Boolean)
+      expect(stamps).toEqual([...stamps].sort().reverse())
+    }
   })
 
   test('nothing from another project reaches this one', () => {

@@ -30,7 +30,7 @@ import {
 
 export type FleetSort = 'needs-you' | 'last-moved' | 'name' | 'release' | 'most-owed'
 
-// Newest first is the default (Dominik 2026-09-23, drawing Y): a project that
+// Newest first is the default: a project that
 // moved minutes ago must never sit mid-table.
 export const DEFAULT_FLEET_SORT: FleetSort = 'last-moved'
 

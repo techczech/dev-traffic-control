@@ -1,5 +1,6 @@
 import type { BrowserWindow } from 'electron'
 import { afterEach, describe, expect, test, vi } from 'vitest'
+import { LinkLift } from '../pinInvariant'
 import {
   bringWindowForward,
   configureWindowVisibility,
@@ -120,6 +121,10 @@ interface ForwardHarness {
   calls: string[]
   blur(): void
   hasBlurHandler(): boolean
+  /** His first click, key or drag in the window. */
+  touch(): void
+  touchWatchers(): number
+  watch(listener: () => void): () => void
   destroy(): void
 }
 
@@ -127,6 +132,7 @@ function forwardHarness(minimized = false): ForwardHarness {
   const calls: string[] = []
   let blur: (() => void) | null = null
   let destroyed = false
+  const touchListeners = new Set<() => void>()
   const win: ForwardableWindow = {
     isDestroyed: () => destroyed,
     isMinimized: () => minimized,
@@ -147,8 +153,14 @@ function forwardHarness(minimized = false): ForwardHarness {
     calls,
     blur: () => blur?.(),
     hasBlurHandler: () => blur !== null,
+    touch: () => [...touchListeners].forEach((listener) => listener()),
+    touchWatchers: () => touchListeners.size,
     destroy: () => {
       destroyed = true
+    },
+    watch: (listener) => {
+      touchListeners.add(listener)
+      return () => touchListeners.delete(listener)
     }
   }
 }
@@ -187,6 +199,57 @@ describe('bringing a link window forward', () => {
     expect(h.calls).toEqual(['show', 'onTop:true:floating:1', 'moveTop', 'focus'])
     h.blur()
     expect(h.calls.at(-1)).toBe('onTop:false')
+  })
+
+  // A big link window must not stay on top. The lift ends at
+  // the first blur or the first touch, whichever comes first.
+  test('the lift ends on the first touch of the window, with no blur at all', () => {
+    const h = forwardHarness()
+    const lift = new LinkLift()
+    bringWindowForward(h.win, {
+      hiddenTestMode: false,
+      isPinned: () => false,
+      pinnedPeerExists: () => true,
+      lift,
+      watchInteraction: h.watch
+    })
+    expect(lift.active).toBe(true)
+    expect(h.touchWatchers()).toBe(1)
+    h.touch()
+    expect(h.calls.at(-1)).toBe('onTop:false')
+    expect(lift.active).toBe(false)
+    expect(h.touchWatchers()).toBe(0)
+  })
+
+  test('the lift ends on blur when he never touches the window, and only once', () => {
+    const h = forwardHarness()
+    const lift = new LinkLift()
+    bringWindowForward(h.win, {
+      hiddenTestMode: false,
+      isPinned: () => false,
+      pinnedPeerExists: () => true,
+      lift,
+      watchInteraction: h.watch
+    })
+    h.blur()
+    expect(lift.active).toBe(false)
+    expect(h.touchWatchers()).toBe(0)
+    h.touch()
+    expect(h.calls.filter((call) => call === 'onTop:false')).toHaveLength(1)
+  })
+
+  test('no lift, no watching, when there is no pinned peer', () => {
+    const h = forwardHarness()
+    const lift = new LinkLift()
+    bringWindowForward(h.win, {
+      hiddenTestMode: false,
+      isPinned: () => false,
+      pinnedPeerExists: () => false,
+      lift,
+      watchInteraction: h.watch
+    })
+    expect(lift.active).toBe(false)
+    expect(h.touchWatchers()).toBe(0)
   })
 
   test('pinning it meanwhile keeps it pinned after it loses focus', () => {

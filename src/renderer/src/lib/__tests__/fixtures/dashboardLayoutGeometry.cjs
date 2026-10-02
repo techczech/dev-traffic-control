@@ -2,7 +2,7 @@
    A CommonJS fixture run directly by `node`, never bundled: require() is its
    module system and it carries no TypeScript annotations to return. */
 /*
- * Ticket 13. Dominik's installed build put a fixed 252px rail inside an 860px
+ * Ticket 13. The reviewer's installed build put a fixed 252px rail inside an 860px
  * window beside the Dashboard — the landing surface, and the only one with its
  * own right-hand panel — and request titles wrapped one word per line.
  *
@@ -110,7 +110,7 @@ const cases = [
 
   /*
    * The reported defect, kept permanently: the same 460px bar with the centred
-   * app name reinstated. Dominik's screenshot of 0.21.0-alpha.2 showed it
+   * app name reinstated. The reviewer's screenshot of 0.21.0-alpha.2 showed it
    * wrapped to three lines against the build marker with the pin off the frame.
    * Without this case the zero-overflow assertions beside it would be unfalsified.
    */
@@ -181,7 +181,7 @@ const SHIPPED_TITLEBAR_CSS = `<style>
     flex: 0 1 auto;
   }
   /* …and it did not tighten itself at the narrow preset. Restoring this makes
-     the case reproduce the overflow Dominik photographed, to the pixel. */
+     the case reproduce the overflow the reviewer photographed, to the pixel. */
   .titlebar.shipped-alpha2 {
     gap: 6px;
     padding-right: 14px;
