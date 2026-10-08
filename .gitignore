@@ -1,0 +1,10 @@
+node_modules
+dist
+out
+.DS_Store
+.eslintcache
+*.log*
+*.tsbuildinfo
+
+# Claude Code may write engine types here
+public/claude-mod/dtc-inbox/.claude-plugin/types/

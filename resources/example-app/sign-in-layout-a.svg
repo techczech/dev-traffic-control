@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif">
+  <rect width="640" height="360" fill="#fbfbfa"/>
+  <rect width="640" height="22" fill="#ecebe7"/>
+  <circle cx="14" cy="11" r="4" fill="#cfccc5"/><circle cx="28" cy="11" r="4" fill="#cfccc5"/><circle cx="42" cy="11" r="4" fill="#cfccc5"/>
+  <rect x="200" y="84" width="240" height="200" rx="10" fill="#ffffff" stroke="#dcd9d2"/>
+  <text x="220" y="120" font-size="16" font-weight="700" fill="#222">Sign in</text>
+  <rect x="220" y="134" width="200" height="28" rx="6" fill="#fff" stroke="#d7d4cd"/>
+  <text x="230" y="152" font-size="11" fill="#9a9a9a">Email</text>
+  <rect x="220" y="170" width="200" height="28" rx="6" fill="#fff" stroke="#d7d4cd"/>
+  <text x="230" y="188" font-size="11" fill="#9a9a9a">Password</text>
+  <rect x="220" y="208" width="200" height="30" rx="6" fill="#0f766e"/>
+  <text x="320" y="227" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">Sign in</text>
+  <text x="320" y="262" font-size="10.5" fill="#777" text-anchor="middle">Forgot password? · Create account</text>
+</svg>

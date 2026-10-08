@@ -1,0 +1,14 @@
+{
+  "name": "dev-traffic-control",
+  "owner": {
+    "name": "Dominik Luke\u0161"
+  },
+  "description": "Claude Code mods for Dev Traffic Control.",
+  "plugins": [
+    {
+      "name": "dtc-inbox",
+      "source": "./claude-mod/dtc-inbox",
+      "description": "A /dtc pane, a band and a dtc_answers tool for Dev Traffic Control: see which answers wait for your agent, and let the agent read them as delimited data. It never acts by itself."
+    }
+  ]
+}

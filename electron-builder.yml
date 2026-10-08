@@ -1,0 +1,58 @@
+appId: com.techczech.dev-traffic-control
+productName: Dev Traffic Control
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+asarUnpack:
+  - resources/**
+win:
+  executableName: dev-traffic-control
+nsis:
+  artifactName: ${name}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+mac:
+  entitlementsInherit: build/entitlements.mac.plist
+  extendInfo:
+    # The default record folder is ~/Documents/Dev Traffic Control.
+    NSDocumentsFolderUsageDescription: Dev Traffic Control keeps its records in a folder in your Documents folder.
+    # Deep links. Without this entry macOS never hands the
+    # installed app a dtc:// URL, whatever setAsDefaultProtocolClient says.
+    CFBundleURLTypes:
+      - CFBundleURLName: Dev Traffic Control record link
+        CFBundleTypeRole: Viewer
+        CFBundleURLSchemes:
+          - dtc
+  # CI notarises: the release workflow holds the Apple credentials as secrets.
+  # Local builds (build:mac, build:unpack) strip the Apple variables, so they
+  # are never notarised.
+  #
+  # Signing is mandatory in CI only. The release workflow packages with
+  # `-c.forceCodeSigning=true`, so a release that cannot be signed fails, and it
+  # verifies the signature, notarisation and stapled ticket before uploading.
+  # forceCodeSigning is not set here, so a local build on a machine with no
+  # certificate still completes.
+  notarize: true
+dmg:
+  artifactName: ${name}-${version}.${ext}
+linux:
+  target:
+    - AppImage
+    - snap
+    - deb
+  maintainer: Dominik Lukes <904715+techczech@users.noreply.github.com>
+  category: Utility
+appImage:
+  artifactName: ${name}-${version}.${ext}
+npmRebuild: false
+publish:
+  provider: github
+  owner: techczech
+  repo: dev-traffic-control

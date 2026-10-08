@@ -1,0 +1,919 @@
+/* ===========================================================================
+   The project home.
+
+   main.css already owns `.card` and `.empty`, so everything here lives under `.phome`
+   with a `phome-` prefix. A bare word is a global claim.
+   =========================================================================== */
+
+.phome {
+  background: var(--paper);
+}
+.phome .phome-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+/* The page scrolls; a section never shrinks to fit it. A card clips its own
+   overflow for its rounded corners, so a shrinking one cut the release block
+   down to its first question. */
+.phome .phome-scroll > *,
+.phome .phome-stack > * {
+  flex: none;
+}
+
+/* ---- 70/30: the deep read on the left, the lanes and lists beside it ---- */
+.phome .phome-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+  gap: 12px;
+  align-items: start;
+}
+.phome .phome-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.phome .phome-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+@media (max-width: 760px) {
+  .phome .phome-cols,
+  .phome .phome-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- a bounded section: stage, surface, row, each a visible step ---- */
+.phome .phome-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  overflow: hidden;
+  min-width: 0;
+}
+.phome .phome-card > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 11px;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--line);
+  font-size: 10.5px;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+.phome .phome-card > header .ic {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.phome .phome-card > header .n {
+  margin-left: auto;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+/* What is waiting on the reviewer pulls the eye: amber, not a hairline. */
+.phome .phome-card.pull {
+  background: var(--status-progress-bg);
+  border-color: var(--status-progress-edge);
+}
+.phome .phome-card.pull > header {
+  background: #f1d9ad;
+  border-bottom-color: var(--status-progress-edge);
+  color: var(--status-progress-ink);
+}
+.phome .phome-card.pull > header .n {
+  color: var(--status-progress-ink);
+}
+/* Rows are white on the amber card, one clear line apart, so each reads as
+   its own clickable thing. */
+.phome .phome-card.pull .phome-r {
+  background: #fff;
+  border-bottom-color: var(--status-progress-edge);
+}
+.phome .phome-card.pull .phome-r .age {
+  color: var(--status-progress-ink);
+}
+
+/* The release needs the reviewer: the whole width, a step louder. */
+.phome .phome-card.loud {
+  box-shadow:
+    0 0 0 3px #faf0dc,
+    0 8px 22px rgba(112, 72, 0, 0.14);
+}
+.phome .phome-card.loud > header {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  padding: 10px 13px;
+}
+.phome .phome-card.loud > header .ic.lg {
+  width: 16px;
+  height: 16px;
+}
+/* Each waiting question is a white card with a thick coloured edge, the
+   colour cycling per question. The edge marks the item without tinting the words. */
+.phome .phome-hero {
+  --hero-edge: #c99441;
+  position: relative;
+  padding: 14px 16px 14px 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  box-shadow: inset 7px 0 0 var(--hero-edge);
+}
+.phome .phome-hero:nth-child(4n + 2) {
+  --hero-edge: #4a86b8;
+}
+.phome .phome-hero:nth-child(4n + 3) {
+  --hero-edge: #8a67b8;
+}
+.phome .phome-hero:nth-child(4n + 4) {
+  --hero-edge: #c2665b;
+}
+.phome .phome-hero:last-child {
+  border-bottom: none;
+}
+.phome .phome-hero.focused {
+  background: #f6fbfa;
+}
+.phome .phome-hero.more {
+  box-shadow: none;
+}
+.phome .phome-hero .q {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 640;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  cursor: pointer;
+}
+.phome .phome-hero .m {
+  color: var(--muted);
+  font-size: 12.5px;
+  margin-top: 3px;
+}
+.phome .phome-hero.more {
+  padding: 8px 14px;
+  color: var(--status-progress-ink);
+  font-size: 12px;
+}
+.phome .phome-hero .f {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 9px;
+}
+
+/* ---- rows: title left, its age or state immediately after ---- */
+.phome .phome-rows {
+  display: flex;
+  flex-direction: column;
+}
+.phome .phome-r {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px 11px;
+  background: #fff;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+}
+.phome .phome-r:last-child {
+  border-bottom: none;
+}
+.phome button.phome-r {
+  cursor: pointer;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+/* Every row that opens something says so with a chevron. */
+.phome button.phome-r::after {
+  content: '›';
+  color: var(--faint);
+  font-size: 16px;
+  line-height: 1;
+}
+.phome button.phome-r:hover::after,
+.phome .phome-r.focused::after {
+  color: var(--accent);
+}
+.phome button.phome-r:hover,
+.phome .phome-r.focused {
+  background: var(--accent-tint);
+}
+.phome .phome-card.pull button.phome-r:hover,
+.phome .phome-card.pull .phome-r.focused {
+  background: #fff4de;
+}
+.phome .phome-r .t {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  min-width: 0;
+}
+/* A row's second line — a round's rollup — under its title, quieter. */
+.phome .phome-r .phome-d {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+/* The closing row of a capped list: how many are not drawn, quieter than the
+   rows above it. */
+.phome .phome-r.more {
+  min-height: 30px;
+  background: var(--card);
+}
+.phome .phome-r.more .t {
+  color: var(--muted);
+  font-size: 12px;
+}
+.phome .age {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.phome .phome-quiet {
+  padding: 11px;
+  color: var(--muted);
+  font-size: 12.5px;
+  background: #fff;
+}
+
+/* ---- the three roadmap lanes, in the reviewer's words ---- */
+.phome .phome-lane {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 11px;
+  background: #fff;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.phome .phome-lane:last-child {
+  border-bottom: none;
+}
+.phome .phome-lane:hover,
+.phome .phome-lane.focused {
+  background: var(--accent-tint);
+}
+.phome .phome-lane .ic {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--muted);
+}
+.phome .phome-lane .ln {
+  font-weight: 600;
+  font-size: 12.5px;
+}
+.phome .phome-lane .lc {
+  margin-left: auto;
+  min-width: 22px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  color: var(--ink);
+  font-size: 11.5px;
+  font-weight: 650;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The five fixed feature-state words, never reworded. */
+.phome .phome-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 19px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.phome .phome-pill.you {
+  background: var(--status-progress-bg);
+  border-color: var(--status-progress-edge);
+  color: var(--status-progress-ink);
+}
+.phome .phome-pill.building {
+  background: var(--status-waiting-bg);
+  border-color: var(--status-waiting-edge);
+  color: var(--status-waiting-ink);
+}
+.phome .phome-pill.built {
+  background: var(--status-ready-bg);
+  border-color: var(--status-ready-edge);
+  color: var(--status-ready-ink);
+}
+.phome .phome-pill.notstarted,
+.phome .phome-pill.done {
+  background: var(--status-inactive-bg);
+  border-color: var(--status-inactive-edge);
+  color: var(--status-inactive-ink);
+}
+.phome .phome-pill.done {
+  opacity: 0.8;
+}
+
+/* ---- no release record: a plain fact, not a fault ---- */
+.phome .phome-norelease {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px;
+  background: #fff;
+}
+.phome .phome-norelease strong {
+  font-size: 13px;
+  font-weight: 620;
+  color: var(--ink);
+}
+.phome .phome-norelease span {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+/* ---- an empty project: one sentence and the one way on ---- */
+.phome .phome-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 44px 20px;
+  text-align: center;
+  color: var(--muted);
+  background: #fff;
+}
+.phome .phome-empty .ic.xl {
+  width: 26px;
+  height: 26px;
+  color: var(--faint);
+}
+.phome .phome-empty h2 {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink);
+}
+.phome .phome-empty p {
+  margin: 0;
+  max-width: 42ch;
+  font-size: 12.5px;
+}
+
+/* ---- buttons are designed controls ---- */
+.phome .phome-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 6px;
+  border: 1px solid var(--line-2);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.phome .phome-btn .ic {
+  width: 14px;
+  height: 14px;
+}
+.phome .phome-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.phome .phome-btn.primary:hover {
+  filter: brightness(1.06);
+}
+
+/* ---- the verdict sheet: one verdict at a time ----
+   It starts below the title bar, never over it, so the window's own
+   controls (pin, Dock, Expand) stay visible and usable while the reviewer answers. */
+.phome .verdict-sheet {
+  position: fixed;
+  inset: var(--titlebar-height) 0 0 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  outline: none;
+}
+.phome .verdict-sheet-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  padding-top: max(10px, env(titlebar-area-height, 10px));
+  border-bottom: 1px solid var(--line);
+  -webkit-app-region: drag;
+}
+.phome .verdict-back {
+  -webkit-app-region: no-drag;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  padding: 4px 6px 4px 0;
+}
+.phome .verdict-sheet-bar kbd {
+  color: var(--muted);
+  font-size: 12px;
+}
+.phome .verdict-sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 20px 24px;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+}
+.phome .verdict-step {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.phome .verdict-dots {
+  display: flex;
+  gap: 6px;
+  margin: 10px 0 12px;
+}
+.phome .verdict-dots i {
+  width: 22px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--line-2);
+}
+.phome .verdict-dots i.on {
+  background: var(--accent);
+}
+.phome .verdict-title {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0 0 4px;
+}
+.phome .verdict-detail {
+  color: var(--muted);
+  margin: 0;
+}
+.phome .verdict-how {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13.5px;
+  white-space: pre-wrap;
+}
+.phome .verdict-comment {
+  display: block;
+  margin-top: 14px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.phome .verdict-comment textarea {
+  display: block;
+  width: 100%;
+  min-height: 68px;
+  margin-top: 5px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--ink);
+  resize: vertical;
+}
+.phome .verdict-error {
+  color: var(--fail);
+  font-size: 13px;
+  margin: 8px 0 0;
+}
+.phome .verdict-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 14px;
+}
+.phome .verdict-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--line-2);
+  background: #fff;
+  font: inherit;
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.phome .verdict-btn.works {
+  background: var(--status-ready-bg);
+  color: var(--status-ready-ink);
+  border-color: var(--status-ready-edge);
+}
+.phome .verdict-btn.off {
+  background: #f7e3df;
+  color: #8a3a30;
+  border-color: #d49a91;
+}
+.phome .verdict-btn.skip {
+  margin-left: auto;
+}
+.phome .verdict-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.phome .verdict-next {
+  margin: 16px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* ---- Archive old: a quiet control above the page ---- */
+.phome .phome-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+/* Where each request stands. */
+.phome .phome-r .meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.phome .phome-state {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 8px;
+  border: 1px solid;
+}
+.phome .phome-state.you {
+  background: var(--status-progress-bg);
+  color: var(--status-progress-ink);
+  border-color: var(--status-progress-edge);
+}
+.phome .phome-state.started {
+  background: var(--status-waiting-bg);
+  color: var(--status-waiting-ink);
+  border-color: var(--status-waiting-edge);
+}
+.phome .phome-state.done {
+  background: var(--status-ready-bg);
+  color: var(--status-ready-ink);
+  border-color: var(--status-ready-edge);
+}
+
+/* ---- New note: beside Archive old, on every Project Dash ---- */
+.phome .phome-toolbar {
+  gap: 8px;
+}
+.phome .phome-new-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--line-2);
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 7px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.phome .phome-new-note:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---- Verdict pictures: the check's strip, under the comment ---- */
+.phome .verdict-shots {
+  margin-top: 10px;
+}
+.phome .verdict-sheet.dragover .verdict-shots .pastetile {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---- Verdicts all at once ----
+   The switch sits at the top right of the sheet, beside the step line. Each
+   waiting feature is a card with the waiting questions' coloured edge; the
+   focused card opens its comment box and screenshot strip; answered cards
+   fade and stay. */
+.phome .verdict-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.phome .verdict-switch {
+  flex: none;
+}
+.phome .verdict-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.phome .verdict-card {
+  --hero-edge: #c99441;
+  padding: 12px 14px 12px 20px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  box-shadow: inset 7px 0 0 var(--hero-edge);
+  cursor: default;
+}
+.phome .verdict-card:nth-child(4n + 2) {
+  --hero-edge: #4a86b8;
+}
+.phome .verdict-card:nth-child(4n + 3) {
+  --hero-edge: #8a67b8;
+}
+.phome .verdict-card:nth-child(4n + 4) {
+  --hero-edge: #c2665b;
+}
+.phome .verdict-card.focused {
+  border-color: var(--accent);
+  box-shadow:
+    inset 7px 0 0 var(--hero-edge),
+    0 0 0 1px var(--accent);
+}
+.phome .verdict-card.answered {
+  opacity: 0.62;
+  background: var(--paper);
+}
+.phome .verdict-card.dragover .verdict-shots .pastetile {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.phome .verdict-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0 0 3px;
+}
+.phome .verdict-card .verdict-actions {
+  margin-top: 10px;
+}
+.phome .verdict-card .verdict-btn kbd {
+  margin-left: 4px;
+  padding: 0 5px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+.phome .verdict-card .verdict-comment {
+  margin-top: 10px;
+}
+.phome .verdict-card .verdict-comment textarea {
+  margin-top: 0;
+  min-height: 56px;
+}
+.phome .verdict-card-given {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--status-ready-ink);
+}
+.phome .verdict-card-given.off {
+  color: #8a3a30;
+}
+.phome .verdict-card-given .ic {
+  width: 14px;
+  height: 14px;
+}
+.phome .verdict-how-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.phome .verdict-how-toggle .ic {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.12s;
+}
+.phome .verdict-how-toggle.open .ic {
+  transform: rotate(90deg);
+}
+.phome .verdict-card .verdict-how {
+  margin-top: 6px;
+}
+.phome .verdict-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.phome .verdict-keys {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* The Waiting card's arrangement toggle. */
+.phome .phome-card > header .w-toggle {
+  display: inline-flex;
+  margin-left: 10px;
+  border: 1px solid var(--status-progress-edge);
+  border-radius: 7px;
+  overflow: hidden;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.phome .phome-card > header .w-toggle button {
+  padding: 3px 9px;
+  border: 0;
+  background: #fff9ee;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--status-progress-ink);
+  cursor: pointer;
+}
+.phome .phome-card > header .w-toggle button + button {
+  border-left: 1px solid var(--status-progress-edge);
+}
+.phome .phome-card > header .w-toggle button.on {
+  background: var(--status-progress-ink);
+  color: #fff;
+}
+
+/* With your agents: grey, dashed, closed until opened. Nothing in it has a button. */
+.phome .phome-agents {
+  background: var(--paper-2);
+  border: 1px dashed var(--line-2);
+  border-radius: 7px;
+  overflow: hidden;
+}
+.phome .phome-agents > .hd {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: var(--muted);
+  cursor: pointer;
+}
+.phome .phome-agents > .hd .ic {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.phome .phome-agents > .hd .lbl {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.phome .phome-agents > .hd .sum {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+}
+.phome .phome-agents > .hd .sum b {
+  color: #4b5157;
+  font-weight: 650;
+}
+.phome .phome-agents > .hd .show {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.phome .phome-agents > .hd .show .ic {
+  width: 14px;
+  height: 14px;
+}
+.phome .phome-agents .rows {
+  display: flex;
+  flex-direction: column;
+}
+.phome .phome-agents .ar {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.55);
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.phome .phome-agents .ar:hover,
+.phome .phome-agents .ar.focused {
+  background: #fff;
+}
+.phome .phome-agents .ar.more {
+  cursor: default;
+  font-size: 13px;
+  color: var(--muted);
+}
+.phome .phome-agents .ar .t {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #3c4148;
+}
+.phome .phome-agents .ar .s {
+  display: block;
+  margin-top: 2px;
+  font-size: 13.5px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+.phome .phome-agents .ar .s b {
+  font-weight: 650;
+  color: #4b5157;
+}
+@media (max-width: 760px) {
+  .phome .phome-agents > .hd .sum {
+    flex-basis: 100%;
+    order: 3;
+  }
+}

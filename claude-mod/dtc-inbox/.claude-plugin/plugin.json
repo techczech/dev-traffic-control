@@ -1,0 +1,14 @@
+{
+  "name": "dtc-inbox",
+  "version": "0.3.0",
+  "description": "Shows Dev Traffic Control answers waiting for your agent in Claude Code: a band, the /dtc pane, and a dtc_answers tool that returns them as delimited data. It never acts by itself.",
+  "types": "./types/index.d.ts",
+  "author": { "name": "Dominik Lukeš" },
+  "homepage": "https://github.com/techczech/dev-traffic-control",
+  "license": "MIT",
+  "userConfig": {
+    "dtcRoot": { "type": "string", "title": "Records folder", "description": "The folder Dev Traffic Control keeps its records in (the app's Settings show it).", "default": "~/Documents/Dev Traffic Control" },
+    "hubDir": { "type": "string", "title": "All-projects folder (optional)", "description": "A session working in this folder sees every project's waiting answers. Leave empty and each session sees its own project only.", "default": "" },
+    "bandRefreshSeconds": { "type": "number", "title": "Band refresh (seconds)", "description": "How often the waiting count is recomputed.", "default": 60 }
+  }
+}

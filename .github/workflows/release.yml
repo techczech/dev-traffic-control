@@ -1,0 +1,303 @@
+name: Release
+
+# Build the macOS (Apple Silicon) app and upload it to ONE draft GitHub Release.
+# Trigger by pushing a version tag, e.g.  git tag v0.22.0 && git push origin v0.22.0
+# The dmg, the zip and the Claude Code mod (dtc-inbox-mod.zip) go to a DRAFT
+# release for that version. Wait for the run to finish, review the draft, then
+# publish it.
+#
+# The build is code-signed with a Developer ID Application certificate and
+# notarised by Apple, so downloads open without the Gatekeeper warning. Both
+# are mandatory here, in this order:
+#
+#   1. The job stops before anything is built if any of the five Apple secrets
+#      is empty (APPLE_DEVID_P12_BASE64, APPLE_DEVID_P12_PASSWORD, APPLE_ID,
+#      APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID).
+#   2. The app is packaged with forceCodeSigning, so a build that cannot be
+#      signed fails instead of producing an unsigned app. Nothing is uploaded
+#      by the packaging step (--publish never).
+#   3. The built app, and the copy inside the zip, must pass `codesign`,
+#      Gatekeeper (`spctl`, which has to say "Notarized Developer ID") and
+#      `stapler validate`.
+#   4. Only then are the dmg and zip, with the mod's zip and a list of all
+#      three checksums, handed to the upload job.
+#
+# The run may only release the tag that started it (scripts/release-check.mjs):
+# the repository must be the one the script names, the tag must be
+# v<package.json version>, it must be fetched from the repository successfully,
+# and the checked-out commit must be that tag's commit. A manual run names the
+# tag in its `tag` input and passes the same check. The check runs four times:
+# in the build job, at the start of the upload job, as the last thing before
+# the draft is created, and once more after the upload. A failed command in
+# any of them fails the run.
+#
+# What the upload guarantees, and what it does not:
+#
+#   - The run creates the draft itself and attaches files only to that draft.
+#     Any release that already exists for the tag, draft or published, fails
+#     the run before anything is uploaded. To rebuild a draft, delete the
+#     draft release and run again.
+#   - The draft is created with --verify-tag, so it is never created for a tag
+#     the repository does not hold.
+#   - Creating the draft and uploading its files are separate requests, not
+#     one atomic step. The draft is visible while the files upload. Do not
+#     publish it until the run has finished: files that are still uploading
+#     would be added to a published release.
+#   - The run's last step reads the release back. It fails unless there is
+#     exactly one release for the tag, it is still a draft, it is the one this
+#     run created, and its files are exactly the files in the build job's
+#     checksum list, no more and no fewer, each with the SHA-256 recorded
+#     there. It prints each file with its SHA-256.
+#   - Nothing here stops a tag from being moved or deleted after the run. The
+#     repository must protect v* tags against update and deletion with a tag
+#     ruleset (see the README, Releases).
+#
+# The skill's zip (dev-traffic-control-skill.zip) comes from another
+# repository. The maintainer attaches it to the draft after the run has
+# finished, then runs `node scripts/release-check.mjs assets --after-manual
+# <tag>`, which accepts exactly the run's files plus that zip. The run's own
+# last step accepts exactly the run's files: any other file on the draft,
+# that zip included, fails it.
+#
+# Two jobs. `build` signs, notarises and verifies with read-only access to the
+# repository. `upload` receives the verified files as a workflow artifact and
+# is the only job allowed to write a release.
+#
+# The secrets are encrypted repository secrets. Only tag pushes by a maintainer
+# trigger this; pull requests from forks never receive the secrets.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'The tag to release. Must be v<package.json version> and sit on the commit this run checks out.'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and verify, macOS (arm64)
+    runs-on: macos-14
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.authorise.outputs.tag }}
+      sums: ${{ steps.sums.outputs.digest }}
+    steps:
+      - name: Require the signing and notarisation secrets
+        env:
+          APPLE_DEVID_P12_BASE64: ${{ secrets.APPLE_DEVID_P12_BASE64 }}
+          APPLE_DEVID_P12_PASSWORD: ${{ secrets.APPLE_DEVID_P12_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          missing=0
+          for name in APPLE_DEVID_P12_BASE64 APPLE_DEVID_P12_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::The repository secret $name is empty. A release must be signed and notarised."
+              missing=1
+            fi
+          done
+          exit "$missing"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+      - name: Check that this run may release this tag
+        id: authorise
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: node scripts/release-check.mjs trigger
+      - name: Install dependencies
+        run: npm ci
+      - name: Check the Claude Code mod (typecheck and tests)
+        run: |
+          npm run typecheck:mod
+          npm run test:mod
+      - name: Typecheck and build
+        run: npm run build
+      - name: Package (signed + notarised dmg, zip; nothing uploaded)
+        run: npx electron-builder --mac dmg zip --arm64 --publish never -c.forceCodeSigning=true
+        env:
+          # Developer ID code signing: electron-builder imports this .p12 into a temporary keychain
+          CSC_LINK: ${{ secrets.APPLE_DEVID_P12_BASE64 }}
+          CSC_KEY_PASSWORD: ${{ secrets.APPLE_DEVID_P12_PASSWORD }}
+          # Notarisation
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      - name: Verify the signature, notarisation and stapled ticket
+        run: |
+          set -euo pipefail
+
+          verify_app() {
+            local app="$1"
+            echo "::group::Verify $app"
+            test -d "$app"
+            # 1. The signature is valid for the whole bundle.
+            codesign --verify --deep --strict --verbose=2 "$app"
+            # 2. Gatekeeper accepts it, and as a notarised Developer ID app.
+            local assessment
+            if ! assessment="$(spctl -a -vv "$app" 2>&1)"; then
+              echo "$assessment"
+              echo "::error::Gatekeeper rejects $app."
+              exit 1
+            fi
+            echo "$assessment"
+            if ! grep -q 'source=Notarized Developer ID' <<<"$assessment"; then
+              echo "::error::$app is not a Notarized Developer ID app."
+              exit 1
+            fi
+            # 3. The notarisation ticket is stapled, so it opens offline too.
+            xcrun stapler validate "$app"
+            echo "::endgroup::"
+          }
+
+          shopt -s nullglob
+          dmgs=(dist/*.dmg)
+          zips=(dist/*.zip)
+          if [ "${#dmgs[@]}" -ne 1 ] || [ "${#zips[@]}" -ne 1 ]; then
+            echo "::error::Expected exactly one dmg and one zip in dist/, found ${#dmgs[@]} and ${#zips[@]}."
+            exit 1
+          fi
+
+          # The app electron-builder signed, notarised and packed.
+          verify_app "dist/mac-arm64/Dev Traffic Control.app"
+
+          # The copy people download, taken back out of the zip.
+          unpacked="$(mktemp -d)"
+          ditto -x -k "${zips[0]}" "$unpacked"
+          verify_app "$unpacked/Dev Traffic Control.app"
+      - name: Package the Claude Code mod (dtc-inbox-mod.zip)
+        run: |
+          set -euo pipefail
+          # Only files the repository tracks are packed, so no node_modules and
+          # no test output. The typings Claude Code writes into the mod's
+          # .claude-plugin/types/ are left out as well. The zip unpacks as a
+          # plugin marketplace: .claude-plugin/marketplace.json and the mod.
+          git ls-files -- .claude-plugin/marketplace.json claude-mod/dtc-inbox \
+            | grep -v -e '^claude-mod/dtc-inbox/node_modules/' -e '^claude-mod/dtc-inbox/\.claude-plugin/types/' \
+            | zip -X -q dist/dtc-inbox-mod.zip -@
+          packed="$(unzip -Z1 dist/dtc-inbox-mod.zip)"
+          for needed in .claude-plugin/marketplace.json claude-mod/dtc-inbox/.claude-plugin/plugin.json claude-mod/dtc-inbox/hooks/register.tsx claude-mod/dtc-inbox/README.md; do
+            if ! grep -q -x -F "$needed" <<<"$packed"; then
+              echo "::error::dtc-inbox-mod.zip does not hold $needed."
+              exit 1
+            fi
+          done
+          if grep -q -e '/node_modules/' -e '^claude-mod/dtc-inbox/\.claude-plugin/types/' <<<"$packed"; then
+            echo "::error::dtc-inbox-mod.zip holds node_modules or engine-written typings."
+            exit 1
+          fi
+      - name: Record the checksums of the verified files
+        id: sums
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          shasum -a 256 *.dmg *.zip > SHA256SUMS
+          cat SHA256SUMS
+          echo "digest=$(shasum -a 256 SHA256SUMS | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+      - name: Hand the verified files to the upload job
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: verified-release-files
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            dist/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 1
+
+  upload:
+    name: Upload to the draft release
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - name: Check again that this run may release this tag
+        id: authorise
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          BUILT_TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          set -euo pipefail
+          tag="$(node scripts/release-check.mjs trigger)"
+          if [ "$tag" != "$BUILT_TAG" ]; then
+            echo "::error::The build job verified $BUILT_TAG but this job is authorised for $tag."
+            exit 1
+          fi
+      - name: Receive the verified files
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: verified-release-files
+          path: dist
+      - name: Check the files are the ones the build job verified
+        working-directory: dist
+        env:
+          SUMS_DIGEST: ${{ needs.build.outputs.sums }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SUMS_DIGEST" ] || [ "$(sha256sum SHA256SUMS | cut -d ' ' -f 1)" != "$SUMS_DIGEST" ]; then
+            echo "::error::The checksum list is not the one the build job wrote."
+            exit 1
+          fi
+          sha256sum --check --strict SHA256SUMS
+      - name: Check the tag once more, then create the draft release with the verified files
+        id: create
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          INPUT_TAG: ${{ inputs.tag }}
+          TAG: ${{ steps.authorise.outputs.tag }}
+        run: |
+          set -euo pipefail
+          # The files to upload are exactly the ones in the verified checksum
+          # list (each line is 64 hex digits, two spaces, the file name).
+          files=()
+          while IFS= read -r line; do
+            files+=("dist/${line:66}")
+          done < dist/SHA256SUMS
+          # Fails if any release exists for the tag, draft or published, or if
+          # the files are not the dmg, the zip and dtc-inbox-mod.zip.
+          node scripts/release-check.mjs release "$TAG" "${files[@]}"
+          # The last thing before the draft is created: the tag, fetched again
+          # from the repository, is still v<version> on the checked-out commit.
+          tag="$(node scripts/release-check.mjs trigger)"
+          if [ "$tag" != "$TAG" ]; then
+            echo "::error::The files were verified for $TAG but the run is now authorised for $tag."
+            exit 1
+          fi
+          # Creates the draft, then uploads the files to it (separate requests).
+          # --verify-tag: gh refuses when the repository does not hold the tag.
+          url="$(gh release create "$TAG" "${files[@]}" --draft --verify-tag --title "${TAG#v}" --notes "" | tail -n 1)"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+      - name: Check the draft is still a draft and holds the verified files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_TAG: ${{ inputs.tag }}
+          TAG: ${{ steps.authorise.outputs.tag }}
+          URL: ${{ steps.create.outputs.url }}
+        run: |
+          set -euo pipefail
+          # The tag has not moved while the files uploaded.
+          node scripts/release-check.mjs trigger > /dev/null
+          # Exactly one release for the tag, a draft, the one created above,
+          # holding exactly the files in the checksum list, each with the
+          # SHA-256 the build job recorded. Any other file fails the step.
+          node scripts/release-check.mjs assets "$TAG" --manifest dist/SHA256SUMS --url "$URL"

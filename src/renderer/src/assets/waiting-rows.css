@@ -1,0 +1,227 @@
+/* ===========================================================================
+   Each waiting row says what to do. Every selector sits under
+   `.waiting-rows`, which the Project Dash's Waiting card and the DTC Dash's
+   handoffs panel both carry (the agents card and the toggle stay in
+   project-home.css). Wide and narrow follow the container, not the window, because the
+   fleet's panel is narrow inside a wide window.
+   =========================================================================== */
+.waiting-rows {
+  container-type: inline-size;
+  container-name: wrows;
+}
+.waiting-rows .w-group {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 9px 14px 7px;
+  background: #faf0dc;
+  border-bottom: 1px solid var(--status-progress-edge);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--status-progress-ink);
+}
+.waiting-rows .w-group i {
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #8a6524;
+}
+.waiting-rows .phome-w {
+  position: relative;
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 12px 14px;
+  background: #fff;
+  border-bottom: 1px solid var(--status-progress-edge);
+  color: var(--ink);
+}
+.waiting-rows .phome-w:hover,
+.waiting-rows .phome-w.focused {
+  background: #fff4de;
+}
+.waiting-rows .w-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  height: 34px;
+  min-width: 104px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1.5px solid;
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+  justify-self: start;
+}
+.waiting-rows .w-tag .ic {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.waiting-rows .w-tag.test {
+  background: var(--status-waiting-bg);
+  border-color: var(--status-waiting-edge);
+  color: var(--status-waiting-ink);
+}
+.waiting-rows .w-tag.decide {
+  background: #f5e3c2;
+  border-color: #c99848;
+  color: #704800;
+}
+.waiting-rows .w-tag.pickup {
+  background: var(--status-ready-bg);
+  border-color: var(--status-ready-edge);
+  color: var(--status-ready-ink);
+}
+.waiting-rows .w-tag.answer {
+  background: #f6dad5;
+  border-color: #d79b92;
+  color: #8a3226;
+}
+.waiting-rows .w-body {
+  display: block;
+  min-width: 0;
+}
+.waiting-rows .w-title {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 15.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.waiting-rows .w-title em {
+  font-style: normal;
+  color: var(--muted);
+  font-weight: 600;
+}
+/* The whole row opens, so the title button stretches over it; the action
+   button sits above it and opens the same place. */
+.waiting-rows .w-title::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.waiting-rows .w-count {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+  font-size: 14px;
+  line-height: 1.35;
+  color: #555b62;
+}
+.waiting-rows .w-count b {
+  color: var(--ink);
+  font-weight: 650;
+}
+.waiting-rows .w-count.snippet {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.waiting-rows .w-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+.waiting-rows .w-dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  background: var(--hollow);
+  border: 1px solid var(--line-2);
+}
+.waiting-rows .w-dots i.on {
+  background: var(--pass);
+  border-color: var(--pass);
+}
+.waiting-rows .w-age {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--status-progress-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.waiting-rows .w-age.old {
+  color: #a3392c;
+}
+.waiting-rows .w-act {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 15px;
+  border-radius: 9px;
+  border: 1.5px solid var(--accent);
+  background: #fff;
+  color: var(--accent);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.waiting-rows .w-act .ic {
+  width: 15px;
+  height: 15px;
+}
+.waiting-rows .w-act.first {
+  background: var(--accent);
+  color: #fff;
+}
+.waiting-rows .w-more {
+  display: block;
+  padding: 11px 14px;
+  font-size: 14px;
+  background: #fff9ee;
+}
+.waiting-rows .w-more .t {
+  color: var(--status-progress-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+/* Narrow: the tag and the age share a line, then the title and count, then
+   the button, smaller, across the row. */
+@container wrows (max-width: 560px) {
+  .waiting-rows .phome-w {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 10px;
+  }
+  .waiting-rows .w-tag {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .waiting-rows .w-age {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .waiting-rows .w-body {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .waiting-rows .w-act {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    width: 100%;
+    height: 32px;
+    font-size: 13px;
+  }
+}
