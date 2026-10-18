@@ -4,9 +4,11 @@
  * `/Users/<name>` or `/home/<name>` prefix is shortened instead.
  */
 export function tildePath(absolute: string, home?: string): string {
-  const prefix = home ?? absolute.match(/^\/(?:Users|home)\/[^/]+/)?.[0]
+  const normal = absolute.replace(/\\/g, '/')
+  const prefix =
+    home?.replace(/\\/g, '/') ?? normal.match(/^(?:[A-Za-z]:)?\/(?:Users|home)\/[^/]+/)?.[0]
   if (!prefix) return absolute
   const base = prefix.replace(/\/+$/, '')
-  if (absolute === base) return '~'
-  return absolute.startsWith(`${base}/`) ? `~${absolute.slice(base.length)}` : absolute
+  if (normal === base) return '~'
+  return normal.startsWith(`${base}/`) ? `~${normal.slice(base.length)}` : absolute
 }

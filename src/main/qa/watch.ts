@@ -1,5 +1,5 @@
 import chokidar from 'chokidar'
-import { readdir, unlink } from 'node:fs/promises'
+import { readdir, realpath, unlink } from 'node:fs/promises'
 import path from 'node:path'
 import { overwriteConfined } from '../confinedFs'
 
@@ -60,7 +60,7 @@ function watchRoot(
   const ready = new Promise<void>((resolve) => {
     resolveReady = resolve
   })
-  const probePath = path.join(
+  let probePath = path.join(
     root,
     `.dtc-watch-ready-${process.pid}-${Math.random().toString(36).slice(2)}.state.json`
   )
@@ -91,12 +91,13 @@ function watchRoot(
     const next = chokidar.watch(root, {
       depth: 2,
       ignored: (p) =>
-        p !== probePath && (/(^|[\\/])\./.test(p.slice(root.length)) || /\.tmp-[0-9a-f]+$/.test(p)),
+        path.resolve(p) !== probePath &&
+        (/(^|[\\/])\./.test(p.slice(root.length)) || /\.tmp-[0-9a-f]+$/.test(p)),
       ignoreInitial: true,
       usePolling
     })
     next.on('all', (_event, p) => {
-      if (p === probePath) {
+      if (path.resolve(p) === probePath) {
         armed = true
         resolveArmed()
         return
@@ -207,7 +208,12 @@ function watchRoot(
     return clean
   }
 
-  const initialising = sweepStaleSentinels()
+  const initialising = realpath(root)
+    .then((canonical) => {
+      root = canonical
+      probePath = path.join(root, path.basename(probePath))
+      return sweepStaleSentinels()
+    })
     .then((clean) => {
       if (stopped) {
         settleReady()

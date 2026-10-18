@@ -13,8 +13,8 @@ function sourceFiles(root: string): string[] {
   })
   return Object.keys(glob)
     .map((path) => join(dirname(fileURLToPath(import.meta.url)), path))
-    .filter((path) => !path.includes('/commands/'))
-    .filter((path) => !path.includes('/__tests__/'))
+    .filter((path) => !path.split(/[\\/]/).includes('commands'))
+    .filter((path) => !path.split(/[\\/]/).includes('__tests__'))
     .map((path) => relative(root, path))
 }
 

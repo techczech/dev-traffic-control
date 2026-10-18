@@ -3,11 +3,12 @@ import { describe, expect, test } from 'vitest'
 import { parse } from 'yaml'
 
 async function indexSource(): Promise<string> {
-  return readFile(new URL('../index.ts', import.meta.url), 'utf8')
+  return (await readFile(new URL('../index.ts', import.meta.url), 'utf8')).replace(/\r\n/g, '\n')
 }
 
 async function builderConfig(): Promise<{
   mac?: { extendInfo?: Record<string, unknown> }
+  win?: { protocols?: { name: string; schemes: string[] }[] }
 }> {
   return parse(await readFile(new URL('../../../electron-builder.yml', import.meta.url), 'utf8'))
 }
@@ -464,5 +465,13 @@ describe('main/index.ts inbox-state wiring', () => {
     expect(copy).toContain('authoritativeRequestPath(requestPath)')
     expect(copy).toContain('clipboard.writeText(collectPrompt(')
     expect(copy).not.toMatch(/spawn|exec|shell\.open/)
+  })
+})
+
+test('Windows packaging registers the dtc deep-link scheme', async () => {
+  const config = await builderConfig()
+  expect(config.win?.protocols).toContainEqual({
+    name: 'Dev Traffic Control record link',
+    schemes: ['dtc']
   })
 })

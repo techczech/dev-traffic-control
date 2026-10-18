@@ -175,7 +175,7 @@ ${repo ? `repo: ${repo}\n` : ''}---
       const handoff = await readHandoffFile(handoffPath)
 
       expect(handoff.relaunchPrompt).toBe(
-        `Continue the Dev Traffic Control features board thread.\n\nRead ${root}/dev-traffic-control/handoffs/${file} and pick up from where it leaves off.`
+        `Continue the Dev Traffic Control features board thread.\n\nRead ${path.join(root, 'dev-traffic-control', 'handoffs', file)} and pick up from where it leaves off.`
       )
     }
   })
@@ -186,7 +186,7 @@ ${repo ? `repo: ${repo}\n` : ''}---
       'Continue the Board thread.\n\nRead ~/Documents/Dev Traffic Control/proj/handoffs/h.md and pick up from where it leaves off.'
     )
     expect(buildRelaunchPrompt('Board', 'proj', 'h.md', '/srv/records')).toContain(
-      'Read /srv/records/proj/handoffs/h.md '
+      `Read ${path.join('/srv/records', 'proj', 'handoffs', 'h.md')} `
     )
   })
 

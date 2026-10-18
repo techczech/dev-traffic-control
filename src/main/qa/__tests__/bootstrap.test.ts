@@ -1,9 +1,15 @@
-import { afterEach, expect, test } from 'vitest'
+import * as fs from 'node:fs/promises'
+import { afterEach, expect, test, vi } from 'vitest'
 import { chmod, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { ensureProject, ensureQaRepo, refreshContract } from '../bootstrap'
 import { ROOT_AGENTS_MD, ROOT_TEMPLATE_VERSION, templateVersion } from '../templates'
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>()
+  return { ...actual, access: vi.fn(actual.access) }
+})
 
 const temporaryParents: string[] = []
 
@@ -85,11 +91,18 @@ test('a readable chosen root remains usable when sentinel hygiene cannot be writ
 test('a readable but untraversable chosen root is rejected', async () => {
   const root = path.join(await temporaryDirectory(), 'records')
   await mkdir(root)
-  await chmod(root, 0o400)
+  const denied =
+    process.platform === 'win32'
+      ? vi
+          .mocked(fs.access)
+          .mockRejectedValue(Object.assign(new Error('Access denied'), { code: 'EACCES' }))
+      : null
+  if (!denied) await chmod(root, 0o400)
 
   try {
     await expect(ensureQaRepo(root)).rejects.toMatchObject({ code: 'EACCES' })
   } finally {
+    denied?.mockRestore()
     await chmod(root, 0o700)
   }
 })

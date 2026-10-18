@@ -263,7 +263,7 @@ export async function storeShot(
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
   }
   const abs = await saveShot(nextShotPath(dir, itemId, existing), png, recordRoot)
-  return path.relative(path.dirname(requestPath), abs) // e.g. "x.shots/item-1.png"
+  return path.relative(path.dirname(requestPath), abs).split(path.sep).join('/') // e.g. "x.shots/item-1.png"
 }
 
 /**

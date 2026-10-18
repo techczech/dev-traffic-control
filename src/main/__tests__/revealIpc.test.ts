@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, symlink, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, realpath, symlink, writeFile } from 'node:fs/promises'
 import { realpathSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -39,7 +39,7 @@ describe('reveal handlers show only what lives in the record root', () => {
     const h = handlers([handoff])
     expect(h.revealHandoff(handoff)).toBe(true)
     expect(await h.revealPath(report)).toBe(true)
-    expect(showItemInFolder.mock.calls).toEqual([[handoff], [report]])
+    expect(showItemInFolder.mock.calls).toEqual([[handoff], [await realpath(report)]])
   })
 
   test('an unscanned handoff path is refused', () => {

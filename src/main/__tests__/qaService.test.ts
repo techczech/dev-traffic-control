@@ -22,10 +22,7 @@ title: T1
 
 const settle = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 const waitUntil = async (predicate: () => boolean): Promise<void> => {
-  for (let attempt = 0; attempt < 100 && !predicate(); attempt += 1) {
-    await settle(0)
-  }
-  expect(predicate()).toBe(true)
+  await vi.waitFor(() => expect(predicate()).toBe(true), { timeout: 5000, interval: 10 })
 }
 
 async function fixture(): Promise<string> {

@@ -7,7 +7,7 @@ import { nextShotPath, saveShot, shotsDirFor } from '../shots'
 
 test('note path convention', () => {
   expect(notePathFor('/qa/tangram', '2026-07-18', 'title-ideas')).toBe(
-    '/qa/tangram/2026-07-18-note-title-ideas.md'
+    path.join('/qa/tangram', '2026-07-18-note-title-ideas.md')
   )
 })
 

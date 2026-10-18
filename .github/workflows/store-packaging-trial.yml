@@ -1,0 +1,79 @@
+name: Windows Store packaging trial
+on:
+  push:
+    branches: ['codex/windows-store-packaging-trial']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  appx:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - name: Build unsigned trial AppX (placeholder identity; not for submission)
+        id: package
+        shell: pwsh
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          @{
+            extends = './electron-builder.yml'
+            appx = @{
+              identityName = 'Techczech.DevTrafficControlPackagingTrial'
+              publisher = 'CN=StorePackagingTrial'
+              publisherDisplayName = 'PackagingTrial'
+            }
+          } | ConvertTo-Json -Depth 4 | Set-Content -Path store-trial.config.json -Encoding utf8
+          npx --no-install electron-builder --win appx --x64 --publish never --config store-trial.config.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify trial package manifest and deep-link registration
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $packages = @(Get-ChildItem -Path release,dist -Filter *.appx -ErrorAction SilentlyContinue)
+          if ($packages.Count -eq 0) { throw 'No AppX package was built' }
+          foreach ($package in $packages) {
+            $archive = [IO.Compression.ZipFile]::OpenRead($package.FullName)
+            try {
+              $entry = $archive.GetEntry('AppxManifest.xml')
+              if (-not $entry) { throw 'AppxManifest.xml is missing' }
+              $reader = [IO.StreamReader]::new($entry.Open())
+              try { [xml]$manifest = $reader.ReadToEnd() } finally { $reader.Dispose() }
+              if ($manifest.Package.Identity.Name -ne 'Techczech.DevTrafficControlPackagingTrial') {
+                throw 'Unexpected trial package identity'
+              }
+              $protocols = @($manifest.SelectNodes("//*[local-name()='Protocol' and @Name='dtc']"))
+              if ($protocols.Count -ne 1) { throw 'The dtc protocol must be registered exactly once' }
+              $executable = $manifest.Package.Applications.Application.Executable
+              if (-not $archive.GetEntry($executable.Replace('\', '/'))) {
+                throw "Declared app executable is missing: $executable"
+              }
+              Write-Output "Verified $($package.Name): trial identity, executable, dtc:// registration"
+            } finally { $archive.Dispose() }
+          }
+      - name: Hash trial package
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path release,dist -Filter *.appx -ErrorAction SilentlyContinue | ForEach-Object {
+            $hash = Get-FileHash $_.FullName -Algorithm SHA256
+            "$($hash.Hash.ToLower())  $($_.Name)" | Out-File -FilePath "$($_.DirectoryName)/store-trial-sha256.txt" -Append -Encoding utf8
+          }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: ${{ always() && steps.package.outcome == 'success' }}
+        with:
+          name: dtc-store-packaging-trial
+          path: |
+            release/*.appx
+            release/store-trial-sha256.txt
+            dist/*.appx
+            dist/store-trial-sha256.txt
+          if-no-files-found: error

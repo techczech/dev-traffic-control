@@ -416,7 +416,7 @@ title: Progress marks on a request
     // Liveness: the ticks really happened and landed in their own store, so the
     // report's silence above cannot be the silence of a dead tick path.
     expect(JSON.parse(await readFile(ticksFile, 'utf8'))).toEqual({
-      [requestPath.replace(/^\//, '')]: {
+      [requestPath.replace(/\\/g, '/').replace(/^\//, '')]: {
         circle: { steps: [0, 1], expected: [0] }
       }
     })

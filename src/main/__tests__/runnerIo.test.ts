@@ -296,8 +296,8 @@ test('storeShot names sequentially and returns a run-folder-relative path', asyn
   const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3])
   const rel1 = await storeShot(path.dirname(reqPath), reqPath, 'alpha', png)
   const rel2 = await storeShot(path.dirname(reqPath), reqPath, 'alpha', png)
-  expect(rel1).toBe(path.join('2026-07-18-run.shots', 'alpha-1.png'))
-  expect(rel2).toBe(path.join('2026-07-18-run.shots', 'alpha-2.png'))
+  expect(rel1).toBe('2026-07-18-run.shots/alpha-1.png')
+  expect(rel2).toBe('2026-07-18-run.shots/alpha-2.png')
   const dir = path.join(path.dirname(reqPath), '2026-07-18-run.shots')
   expect((await readdir(dir)).sort()).toEqual(['alpha-1.png', 'alpha-2.png'])
 })
@@ -318,12 +318,8 @@ test("storeShot accepts only the request's own item ids and never writes outside
   expect(await readdir(path.join(root, 'demo'))).toEqual(['round-1'])
   expect(await readdir(path.dirname(reqPath))).toEqual(['2026-07-18-run.md'])
 
-  expect(await storeShot(root, reqPath, 'beta', png)).toBe(
-    path.join('2026-07-18-run.shots', 'beta-1.png')
-  )
-  expect(await storeShot(root, reqPath, 'obs-3', png)).toBe(
-    path.join('2026-07-18-run.shots', 'obs-3-1.png')
-  )
+  expect(await storeShot(root, reqPath, 'beta', png)).toBe('2026-07-18-run.shots/beta-1.png')
+  expect(await storeShot(root, reqPath, 'obs-3', png)).toBe('2026-07-18-run.shots/obs-3-1.png')
 })
 
 test('storeShot refuses a symlinked shots folder, outside the root or within it', async () => {

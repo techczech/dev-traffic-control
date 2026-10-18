@@ -147,16 +147,20 @@ describe('readConfined', () => {
     const folder = path.join(root, 'example-app')
     await writeFile(path.join(folder, 'idea.md'), 'inside text')
 
-    await expect(
-      readConfined(root, 'example-app/idea.md', {
-        hooks: {
-          afterOpen: async () => {
-            await rename(folder, path.join(root, 'moved-away'))
-            await symlink(outside, folder)
-          }
+    const reading = readConfined(root, 'example-app/idea.md', {
+      hooks: {
+        afterOpen: async () => {
+          await rename(folder, path.join(root, 'moved-away'))
+          await symlink(outside, folder)
         }
-      })
-    ).rejects.toEqual(refusal('moved'))
+      }
+    })
+    if (process.platform === 'win32') {
+      await expect(reading).rejects.toMatchObject({ code: 'EPERM' })
+      expect(await readFile(path.join(folder, 'idea.md'), 'utf8')).toBe('inside text')
+    } else {
+      await expect(reading).rejects.toEqual(refusal('moved'))
+    }
   })
 })
 
@@ -253,6 +257,23 @@ describe('writeConfinedAtomic', () => {
     ).rejects.toMatchObject({ code: 'EEXIST' })
     expect([...(await readFile(file))]).toEqual([1, 2])
     expect(await names(outside)).toEqual(['private.md'])
+  })
+
+  test('exclusive creation publishes only after verification and preserves a concurrent winner', async () => {
+    const file = path.join(root, 'example-app', 'new.md')
+    await expect(
+      writeConfinedAtomic(root, 'example-app/new.md', 'ours', {
+        exclusive: true,
+        hooks: {
+          beforeCommit: async () => {
+            await expect(readFile(file)).rejects.toMatchObject({ code: 'ENOENT' })
+            await writeFile(file, 'concurrent winner', { flag: 'wx' })
+          }
+        }
+      })
+    ).rejects.toMatchObject({ code: 'EEXIST' })
+    expect(await readFile(file, 'utf8')).toBe('concurrent winner')
+    expect((await names(path.dirname(file))).filter((name) => name.includes('.tmp-'))).toEqual([])
   })
 
   test('creates missing folders below the root only when asked', async () => {

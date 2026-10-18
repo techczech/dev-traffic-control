@@ -12,6 +12,9 @@ files:
 asarUnpack:
   - resources/**
 win:
+  protocols:
+    - name: Dev Traffic Control record link
+      schemes: [dtc]
   executableName: dev-traffic-control
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
