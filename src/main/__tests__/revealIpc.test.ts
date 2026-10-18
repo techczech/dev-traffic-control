@@ -39,7 +39,7 @@ describe('reveal handlers show only what lives in the record root', () => {
     const h = handlers([handoff])
     expect(h.revealHandoff(handoff)).toBe(true)
     expect(await h.revealPath(report)).toBe(true)
-    expect(showItemInFolder.mock.calls).toEqual([[handoff], [report]])
+    expect(showItemInFolder.mock.calls).toEqual([[handoff], [realpathSync(report)]])
   })
 
   test('an unscanned handoff path is refused', () => {

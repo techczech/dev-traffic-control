@@ -131,7 +131,7 @@ export async function addNoteShot(
   // The first shot creates the folder.
   const existing = await namesIn(dir, recordRoot)
   const abs = await saveShot(nextShotPath(dir, 'note', existing), png, recordRoot)
-  return path.relative(path.dirname(notePath), abs) // e.g. "x.shots/note-1.png"
+  return path.relative(path.dirname(notePath), abs).split(path.sep).join('/') // e.g. "x.shots/note-1.png"
 }
 
 /**

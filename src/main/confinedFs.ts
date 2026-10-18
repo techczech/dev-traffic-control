@@ -318,7 +318,8 @@ export async function readConfinedText(
  * Write one file below the records folder: a temporary file created
  * exclusively beside the target, written through its descriptor, then renamed
  * into place once the folder has been checked again. With `exclusive`, the
- * target itself is created and an existing name fails with `EEXIST`. A failed
+ * verified temporary file is linked into place, so an existing name (including
+ * a dangling symlink) fails with `EEXIST` without opening that name. A failed
  * write removes its temporary file when that file is still where it was
  * written. Cleanup is best effort: when the folder was moved or swapped during
  * the write, the temporary file is no longer reachable by its name and stays
@@ -349,7 +350,7 @@ export async function writeConfinedAtomic(
     }
   }
 
-  const written = options.exclusive ? target : `${target}.tmp-${randomBytes(12).toString('hex')}`
+  const written = `${target}.tmp-${randomBytes(12).toString('hex')}`
   // EEXIST means the name was taken and nothing was written: not ours to remove.
   const handle = await open(written, createFlags, 0o666)
   let own: Stats
@@ -370,7 +371,12 @@ export async function writeConfinedAtomic(
     if (!now || now.dev !== own.dev || now.ino !== own.ino) {
       throw new ConfinementError('moved', 'the written file is no longer where it was written')
     }
-    if (!options.exclusive) await rename(written, target)
+    if (options.exclusive) {
+      await link(written, target)
+      await unlink(written)
+    } else {
+      await rename(written, target)
+    }
   } catch (error) {
     await discardOwn(written, own)
     throw error

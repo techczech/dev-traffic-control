@@ -162,7 +162,7 @@ export function buildRelaunchPrompt(
   file: string,
   recordRoot: string
 ): string {
-  const handoffPath = path.join(tildePath(recordRoot, homedir()), project, 'handoffs', file)
+  const handoffPath = tildePath(path.join(recordRoot, project, 'handoffs', file), homedir())
   return `Continue the ${title} thread.\n\nRead ${handoffPath} and pick up from where it leaves off.`
 }
 

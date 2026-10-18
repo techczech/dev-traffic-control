@@ -14,3 +14,8 @@ test('without a home it shortens the usual user prefix and leaves other paths al
   expect(tildePath('/home/a/records')).toBe('~/records')
   expect(tildePath('/srv/records')).toBe('/srv/records')
 })
+
+test('shortens Windows homes without matching a sibling directory', () => {
+  expect(tildePath('C:\\Users\\a\\Documents\\Records', 'C:\\Users\\a')).toBe('~/Documents/Records')
+  expect(tildePath('C:\\Users\\ab\\Records', 'C:\\Users\\a')).toBe('C:\\Users\\ab\\Records')
+})

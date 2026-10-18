@@ -1,6 +1,6 @@
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { afterEach, describe, expect, test } from 'vitest'
 import { armingFor, openedPathFor, writeArming } from '../arming'
 import { scanQaRepo } from '../scan'
@@ -68,8 +68,6 @@ describe('writing the arming', () => {
     )
     await writeFile(join(project, '2026-09-23-a-check.opened.json'), '{}')
     const result = await scanQaRepo(dir)
-    expect(result.runs.map((run) => run.request.path.split('/').pop())).toEqual([
-      '2026-09-23-a-check.md'
-    ])
+    expect(result.runs.map((run) => basename(run.request.path))).toEqual(['2026-09-23-a-check.md'])
   })
 })

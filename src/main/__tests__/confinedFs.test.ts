@@ -147,16 +147,20 @@ describe('readConfined', () => {
     const folder = path.join(root, 'example-app')
     await writeFile(path.join(folder, 'idea.md'), 'inside text')
 
-    await expect(
-      readConfined(root, 'example-app/idea.md', {
-        hooks: {
-          afterOpen: async () => {
-            await rename(folder, path.join(root, 'moved-away'))
-            await symlink(outside, folder)
-          }
+    const reading = readConfined(root, 'example-app/idea.md', {
+      hooks: {
+        afterOpen: async () => {
+          await rename(folder, path.join(root, 'moved-away'))
+          await symlink(outside, folder)
         }
-      })
-    ).rejects.toEqual(refusal('moved'))
+      }
+    })
+    if (process.platform === 'win32') {
+      await expect(reading).rejects.toMatchObject({ code: 'EPERM' })
+      expect(await readFile(path.join(folder, 'idea.md'), 'utf8')).toBe('inside text')
+    } else {
+      await expect(reading).rejects.toEqual(refusal('moved'))
+    }
   })
 })
 

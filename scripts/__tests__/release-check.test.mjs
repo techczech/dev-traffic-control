@@ -480,39 +480,25 @@ describe('draftReport', () => {
   })
 })
 
-/** A folder of stand-in commands, put first on PATH. */
+/** A Node preloader supplies staged CLI replies without shell scripts. */
 function shims(dir) {
   const bin = path.join(dir, 'shim-bin')
   mkdirSync(bin, { recursive: true })
-  const realGit = execFileSync('sh', ['-c', 'command -v git'], { encoding: 'utf8' }).trim()
-  // git: the remote's address and a failing fetch can be staged; everything else is real git.
   writeFileSync(
-    path.join(bin, 'git'),
-    [
-      '#!/bin/sh',
-      'if [ "$1" = remote ] && [ "$2" = get-url ] && [ -n "$FAKE_ORIGIN_URL" ]; then',
-      '  echo "$FAKE_ORIGIN_URL"; exit 0',
-      'fi',
-      'if [ "$1" = fetch ] && [ -n "$FAKE_FETCH_EXIT" ]; then',
-      '  echo "fatal: unable to access the remote" >&2; exit "$FAKE_FETCH_EXIT"',
-      'fi',
-      `exec "${realGit}" "$@"`,
-      ''
-    ].join('\n')
+    path.join(bin, 'preload.cjs'),
+    `
+const cp = require('node:child_process')
+const { syncBuiltinESMExports } = require('node:module')
+const realSpawn = cp.spawnSync
+cp.spawnSync = function(command, args, options) {
+  if (command === 'gh') return { status: Number(process.env.FAKE_GH_EXIT || 0), stdout: process.env.FAKE_GH_STDOUT || '', stderr: process.env.FAKE_GH_STDERR || '' }
+  if (command === 'git' && args[0] === 'remote' && args[1] === 'get-url' && process.env.FAKE_ORIGIN_URL) return {status: 0, stdout: process.env.FAKE_ORIGIN_URL, stderr: ''}
+  if (command === 'git' && args[0] === 'fetch' && process.env.FAKE_FETCH_EXIT) return {status: Number(process.env.FAKE_FETCH_EXIT), stdout: '', stderr: 'fatal: unable to access the remote'}
+  return realSpawn(command, args, options)
+}
+syncBuiltinESMExports()
+`
   )
-  // gh: answers with a staged output, message and exit status.
-  writeFileSync(
-    path.join(bin, 'gh'),
-    [
-      '#!/bin/sh',
-      'if [ -n "$FAKE_GH_STDERR" ]; then printf \'%s\\n\' "$FAKE_GH_STDERR" >&2; fi',
-      'if [ -n "$FAKE_GH_STDOUT" ]; then printf \'%s\' "$FAKE_GH_STDOUT"; fi',
-      'exit "${FAKE_GH_EXIT:-0}"',
-      ''
-    ].join('\n')
-  )
-  chmodSync(path.join(bin, 'git'), 0o755)
-  chmodSync(path.join(bin, 'gh'), 0o755)
   return bin
 }
 
@@ -556,18 +542,23 @@ describe('the trigger command against a real repository', () => {
   function trigger({ dir, bin }, env) {
     const output = path.join(dir, 'github-output')
     writeFileSync(output, '')
-    const result = spawnSync(process.execPath, [script, 'trigger'], {
-      cwd: dir,
-      encoding: 'utf8',
-      env: {
-        PATH: `${bin}:${process.env.PATH}`,
-        HOME: dir,
-        GIT_CONFIG_NOSYSTEM: '1',
-        FAKE_ORIGIN_URL: ORIGIN,
-        GITHUB_OUTPUT: output,
-        ...env
+    const result = spawnSync(
+      process.execPath,
+      ['--require', path.join(bin, 'preload.cjs'), script, 'trigger'],
+      {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          PATH: process.env.PATH,
+          SystemRoot: process.env.SystemRoot,
+          HOME: dir,
+          GIT_CONFIG_NOSYSTEM: '1',
+          FAKE_ORIGIN_URL: ORIGIN,
+          GITHUB_OUTPUT: output,
+          ...env
+        }
       }
-    })
+    )
     return { ...result, output: readFileSync(output, 'utf8') }
   }
 
@@ -688,11 +679,15 @@ describe('the release and assets commands against a stand-in gh', () => {
     return dir
   }
   function command(args, env = {}, dir = checkout()) {
-    return spawnSync(process.execPath, [script, ...args], {
-      cwd: dir,
-      encoding: 'utf8',
-      env: { PATH: `${shims(dir)}:${process.env.PATH}`, HOME: dir, ...env }
-    })
+    return spawnSync(
+      process.execPath,
+      ['--require', path.join(shims(dir), 'preload.cjs'), script, ...args],
+      {
+        cwd: dir,
+        encoding: 'utf8',
+        env: { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, HOME: dir, ...env }
+      }
+    )
   }
   function manifestFile(text) {
     const file = path.join(checkout(), 'SHA256SUMS')
