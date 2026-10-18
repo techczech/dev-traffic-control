@@ -318,12 +318,8 @@ test("storeShot accepts only the request's own item ids and never writes outside
   expect(await readdir(path.join(root, 'demo'))).toEqual(['round-1'])
   expect(await readdir(path.dirname(reqPath))).toEqual(['2026-07-18-run.md'])
 
-  expect(await storeShot(root, reqPath, 'beta', png)).toBe(
-    '2026-07-18-run.shots/beta-1.png'
-  )
-  expect(await storeShot(root, reqPath, 'obs-3', png)).toBe(
-    '2026-07-18-run.shots/obs-3-1.png'
-  )
+  expect(await storeShot(root, reqPath, 'beta', png)).toBe('2026-07-18-run.shots/beta-1.png')
+  expect(await storeShot(root, reqPath, 'obs-3', png)).toBe('2026-07-18-run.shots/obs-3-1.png')
 })
 
 test('storeShot refuses a symlinked shots folder, outside the root or within it', async () => {
