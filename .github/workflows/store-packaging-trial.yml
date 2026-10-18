@@ -23,11 +23,17 @@ jobs:
         shell: pwsh
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-        run: >-
-          npx --no-install electron-builder --win appx --x64 --publish never
-          -c.appx.identityName=Techczech.DevTrafficControlPackagingTrial
-          -c.appx.publisher=CN=StorePackagingTrial
-          -c.appx.publisherDisplayName=PackagingTrial
+        run: |
+          @{
+            extends = './electron-builder.yml'
+            appx = @{
+              identityName = 'Techczech.DevTrafficControlPackagingTrial'
+              publisher = 'CN=StorePackagingTrial'
+              publisherDisplayName = 'PackagingTrial'
+            }
+          } | ConvertTo-Json -Depth 4 | Set-Content -Path store-trial.config.json -Encoding utf8
+          npx --no-install electron-builder --win appx --x64 --publish never --config store-trial.config.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify trial package manifest and deep-link registration
         shell: pwsh
         run: |
