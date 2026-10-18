@@ -6,6 +6,11 @@ import path from 'node:path'
 import { ensureProject, ensureQaRepo, refreshContract } from '../bootstrap'
 import { ROOT_AGENTS_MD, ROOT_TEMPLATE_VERSION, templateVersion } from '../templates'
 
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>()
+  return { ...actual, access: vi.fn(actual.access) }
+})
+
 const temporaryParents: string[] = []
 
 async function temporaryDirectory(): Promise<string> {
@@ -89,7 +94,7 @@ test('a readable but untraversable chosen root is rejected', async () => {
   const denied =
     process.platform === 'win32'
       ? vi
-          .spyOn(fs, 'access')
+          .mocked(fs.access)
           .mockRejectedValue(Object.assign(new Error('Access denied'), { code: 'EACCES' }))
       : null
   if (!denied) await chmod(root, 0o400)

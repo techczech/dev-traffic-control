@@ -89,8 +89,8 @@ test('addNoteShot names note-1.png then note-2.png and creates the shots dir', a
   const rel1 = await addNoteShot(doc.path, png)
   const rel2 = await addNoteShot(doc.path, png)
   const shotsDir = '2026-07-18-note-shots.shots'
-  expect(rel1).toBe(path.join(shotsDir, 'note-1.png'))
-  expect(rel2).toBe(path.join(shotsDir, 'note-2.png'))
+  expect(rel1).toBe(`${shotsDir}/note-1.png`)
+  expect(rel2).toBe(`${shotsDir}/note-2.png`)
   expect((await readdir(path.join(dir, shotsDir))).sort()).toEqual(['note-1.png', 'note-2.png'])
 })
 

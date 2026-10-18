@@ -91,12 +91,13 @@ function watchRoot(
     const next = chokidar.watch(root, {
       depth: 2,
       ignored: (p) =>
-        p !== probePath && (/(^|[\\/])\./.test(p.slice(root.length)) || /\.tmp-[0-9a-f]+$/.test(p)),
+        path.resolve(p) !== probePath &&
+        (/(^|[\\/])\./.test(p.slice(root.length)) || /\.tmp-[0-9a-f]+$/.test(p)),
       ignoreInitial: true,
       usePolling
     })
     next.on('all', (_event, p) => {
-      if (p === probePath) {
+      if (path.resolve(p) === probePath) {
         armed = true
         resolveArmed()
         return
