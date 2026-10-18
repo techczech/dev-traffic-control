@@ -28,6 +28,30 @@ jobs:
           -c.appx.identityName=Techczech.DevTrafficControlPackagingTrial
           -c.appx.publisher=CN=StorePackagingTrial
           -c.appx.publisherDisplayName=PackagingTrial
+      - name: Verify trial package manifest and deep-link registration
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $packages = @(Get-ChildItem -Path release,dist -Filter *.appx -ErrorAction SilentlyContinue)
+          if ($packages.Count -eq 0) { throw 'No AppX package was built' }
+          foreach ($package in $packages) {
+            $archive = [IO.Compression.ZipFile]::OpenRead($package.FullName)
+            try {
+              $entry = $archive.GetEntry('AppxManifest.xml')
+              if (-not $entry) { throw 'AppxManifest.xml is missing' }
+              $reader = [IO.StreamReader]::new($entry.Open())
+              try { [xml]$manifest = $reader.ReadToEnd() } finally { $reader.Dispose() }
+              if ($manifest.Package.Identity.Name -ne 'Techczech.DevTrafficControlPackagingTrial') {
+                throw 'Unexpected trial package identity'
+              }
+              $protocols = @($manifest.SelectNodes("//*[local-name()='Protocol' and @Name='dtc']"))
+              if ($protocols.Count -ne 1) { throw 'The dtc protocol must be registered exactly once' }
+              $executable = $manifest.Package.Applications.Application.Executable
+              if (-not $archive.GetEntry($executable.Replace('\', '/'))) {
+                throw "Declared app executable is missing: $executable"
+              }
+              Write-Output "Verified $($package.Name): trial identity, executable, dtc:// registration"
+            } finally { $archive.Dispose() }
       - name: Hash trial package
         shell: pwsh
         run: |
