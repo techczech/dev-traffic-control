@@ -20,6 +20,7 @@ jobs:
       - run: npm run build
       - run: npm test
       - name: Build unsigned trial AppX (placeholder identity; not for submission)
+        id: package
         shell: pwsh
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
@@ -58,6 +59,7 @@ jobs:
               }
               Write-Output "Verified $($package.Name): trial identity, executable, dtc:// registration"
             } finally { $archive.Dispose() }
+          }
       - name: Hash trial package
         shell: pwsh
         run: |
@@ -66,6 +68,7 @@ jobs:
             "$($hash.Hash.ToLower())  $($_.Name)" | Out-File -FilePath "$($_.DirectoryName)/store-trial-sha256.txt" -Append -Encoding utf8
           }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: ${{ always() && steps.package.outcome == 'success' }}
         with:
           name: dtc-store-packaging-trial
           path: |
