@@ -259,6 +259,23 @@ describe('writeConfinedAtomic', () => {
     expect(await names(outside)).toEqual(['private.md'])
   })
 
+  test('exclusive creation publishes only after verification and preserves a concurrent winner', async () => {
+    const file = path.join(root, 'example-app', 'new.md')
+    await expect(
+      writeConfinedAtomic(root, 'example-app/new.md', 'ours', {
+        exclusive: true,
+        hooks: {
+          beforeCommit: async () => {
+            await expect(readFile(file)).rejects.toMatchObject({ code: 'ENOENT' })
+            await writeFile(file, 'concurrent winner', { flag: 'wx' })
+          }
+        }
+      })
+    ).rejects.toMatchObject({ code: 'EEXIST' })
+    expect(await readFile(file, 'utf8')).toBe('concurrent winner')
+    expect((await names(path.dirname(file))).filter((name) => name.includes('.tmp-'))).toEqual([])
+  })
+
   test('creates missing folders below the root only when asked', async () => {
     await expect(
       writeConfinedAtomic(root, 'new-app/roadmap/order.json', '{}')
